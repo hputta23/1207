@@ -246,6 +246,22 @@ function AppContent() {
             >
               Watchlist
             </Link>
+            <Link
+              to="/analytics"
+              style={{
+                padding: '8px 16px',
+                background: location.pathname === '/analytics' ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                border: location.pathname === '/analytics' ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent',
+                borderRadius: '6px',
+                color: location.pathname === '/analytics' ? '#3b82f6' : '#888',
+                fontSize: '14px',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              Analytics
+            </Link>
           </nav>
         </div>
 
