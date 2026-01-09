@@ -5,6 +5,7 @@ import lineVert from '../../shaders/line.vert.glsl?raw';
 // @ts-ignore
 import lineFrag from '../../shaders/line.frag.glsl?raw';
 import { mat4 } from 'gl-matrix';
+import type { RenderBounds } from './candlestick-renderer';
 
 export class LineRenderer {
     private program: WebGLProgram;
@@ -49,10 +50,12 @@ export class LineRenderer {
 
     public render(
         points: Point[],
-        _viewport: Viewport,
+        viewport: Viewport,
         projMatrix: mat4,
         viewMatrix: mat4,
-        color: [number, number, number, number]
+        color: [number, number, number, number],
+        bounds?: RenderBounds,
+        numCandles?: number
     ) {
         if (points.length === 0) return;
 
@@ -66,8 +69,9 @@ export class LineRenderer {
             if (ext) ext.bindVertexArrayOES(this.vao as any);
         }
 
-        // Upload Data
-        const vertices = new Float32Array(points.filter(p => p.defined).flatMap(p => [p.x, p.y]));
+        // Convert indicator points to screen coordinates
+        const screenPoints = this.convertToScreenCoords(points, viewport, bounds, numCandles);
+        const vertices = new Float32Array(screenPoints);
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.DYNAMIC_DRAW);
@@ -80,7 +84,54 @@ export class LineRenderer {
         this.gl.uniformMatrix4fv(this.uView, false, viewMatrix);
         this.gl.uniform4fv(this.uColor, color);
 
-        // Draw
+        // Draw with thicker lines if supported
+        this.gl.lineWidth(2);
         this.gl.drawArrays(this.gl.LINE_STRIP, 0, vertices.length / 2);
+    }
+
+    private convertToScreenCoords(
+        points: Point[],
+        viewport: Viewport,
+        bounds?: RenderBounds,
+        numCandles?: number
+    ): number[] {
+        const result: number[] = [];
+
+        if (!bounds) {
+            // Fallback: just return raw points (old behavior)
+            points.filter(p => p.defined).forEach(p => {
+                result.push(p.x, p.y);
+            });
+            return result;
+        }
+
+        const chartHeight = viewport.height;
+        const chartWidth = viewport.width;
+        const priceRange = bounds.maxPrice - bounds.minPrice;
+
+        // Same calculations as candlestick renderer
+        const totalCount = numCandles || points.length;
+        const totalCandleSpace = chartWidth * 0.9;
+        const candleWidth = Math.max(3, Math.min(20, totalCandleSpace / totalCount * 0.8));
+        const spacing = candleWidth * 0.25;
+        const totalWidth = candleWidth + spacing;
+
+        const leftMargin = chartWidth * 0.05;
+        const topMargin = 30;
+        const bottomMargin = 30;
+        const usableHeight = chartHeight - topMargin - bottomMargin;
+
+        const priceToY = (price: number): number => {
+            const normalized = (price - bounds.minPrice) / priceRange;
+            return topMargin + usableHeight * (1 - normalized);
+        };
+
+        points.filter(p => p.defined).forEach(p => {
+            const x = leftMargin + p.x * totalWidth + candleWidth / 2;
+            const y = priceToY(p.y);
+            result.push(x, y);
+        });
+
+        return result;
     }
 }

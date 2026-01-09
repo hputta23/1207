@@ -23,12 +23,21 @@ export interface Point {
   defined: boolean;
 }
 
+export interface IndicatorData {
+  id: string;
+  name: string;
+  color: string;
+  points: Point[];
+}
+
 export interface CandleData {
   candles: Candle[];
   indicators?: {
     sma?: Point[];
     ema?: Point[];
   };
+  // New: dynamic indicators array
+  indicatorList?: IndicatorData[];
   // Metadata for rendering optimization
   minPrice: number;
   maxPrice: number;

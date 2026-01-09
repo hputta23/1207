@@ -7,6 +7,13 @@ import { ChartOverlay } from '../Overlay/ChartOverlay';
 import type { RenderState, Theme } from '../../core/renderer/types';
 import { TimeSyncManager } from '../../core/synchronization/time-sync-manager';
 
+interface IndicatorDataItem {
+    id: string;
+    name: string;
+    color: string;
+    points: any[];
+}
+
 interface ChartContainerProps {
     id: string; // Unique chart ID
     width: number;
@@ -18,6 +25,7 @@ interface ChartContainerProps {
     indicatorData?: {
         sma?: any[];
         ema?: any[];
+        indicatorList?: IndicatorDataItem[];
     };
 }
 
@@ -178,9 +186,10 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
                 },
                 data: {
                     candles: data, // Use data from props
-                    indicators: indicatorData, // Pass indicators
-                    minPrice: 0, // TODO: Auto-calculate bounds based on data
-                    maxPrice: 2000, // Adjusted for simulation data
+                    indicators: indicatorData, // Legacy format
+                    indicatorList: indicatorData?.indicatorList, // New dynamic format
+                    minPrice: 0, // Auto-calculated by renderer
+                    maxPrice: 2000,
                     minTime: 0,
                     maxTime: 50
                 },

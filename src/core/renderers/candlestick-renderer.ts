@@ -13,6 +13,11 @@ interface CandleGeometry {
     vertexCount: number;
 }
 
+export interface RenderBounds {
+    minPrice: number;
+    maxPrice: number;
+}
+
 export class CandlestickRenderer {
     private gl: WebGL2RenderingContext;
     private program: WebGLProgram;
@@ -91,16 +96,16 @@ export class CandlestickRenderer {
         candles: Candle[],
         viewport: Viewport,
         projMatrix: mat4,
-        viewMatrix: mat4
+        viewMatrix: mat4,
+        bounds?: RenderBounds
     ): void {
         if (candles.length === 0) return;
 
-        // 1. Cull / Filter
-        // Simple index-based culling requires data to be sorted by time and mapped to X
-        // For this POC, we'll just render everything or a subset if provided
+        // Calculate bounds from data if not provided
+        const dataBounds = bounds || this.calculateBounds(candles);
 
         // 2. Build Geometry
-        const geometry = this.buildGeometry(candles, viewport);
+        const geometry = this.buildGeometry(candles, viewport, dataBounds);
 
         // 3. Upload
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
@@ -119,52 +124,73 @@ export class CandlestickRenderer {
         this.gl.bindVertexArray(null);
     }
 
-    private buildGeometry(candles: Candle[], _viewport: Viewport): CandleGeometry {
-        // Estimate size to avoid resizing arrays too often if possible, but JS arrays grow dyn anyway.
-        // Use strictly typed arrays for final output.
+    public calculateBounds(candles: Candle[]): RenderBounds {
+        if (candles.length === 0) {
+            return { minPrice: 0, maxPrice: 100 };
+        }
+
+        let minPrice = Infinity;
+        let maxPrice = -Infinity;
+
+        for (const candle of candles) {
+            if (candle.low < minPrice) minPrice = candle.low;
+            if (candle.high > maxPrice) maxPrice = candle.high;
+        }
+
+        // Add padding (5% on each side)
+        const range = maxPrice - minPrice;
+        const padding = range * 0.05;
+
+        return {
+            minPrice: minPrice - padding,
+            maxPrice: maxPrice + padding
+        };
+    }
+
+    private buildGeometry(candles: Candle[], viewport: Viewport, bounds: RenderBounds): CandleGeometry {
         const vertexData: number[] = [];
         const indexData: number[] = [];
         let vertexIndex = 0;
 
-        // Width of a candle in pixels (or world units if 1 unit = 1 pixel)
-        // In our coordinate system, X is likely index or time.
-        // Let's assume X = index * candleWidth + spacing
-        const candleWidth = 10; // World units
-        const spacing = 2;
+        // Calculate dimensions based on viewport
+        const chartHeight = viewport.height;
+        const chartWidth = viewport.width;
+        const priceRange = bounds.maxPrice - bounds.minPrice;
+
+        // Calculate candle width based on number of visible candles
+        const numCandles = candles.length;
+        const totalCandleSpace = chartWidth * 0.9; // 90% for candles, 10% for margins
+        const candleWidth = Math.max(3, Math.min(20, totalCandleSpace / numCandles * 0.8));
+        const spacing = candleWidth * 0.25;
         const totalWidth = candleWidth + spacing;
+
+        // Margin from edges
+        const leftMargin = chartWidth * 0.05;
+        const topMargin = 30; // Space for price labels
+        const bottomMargin = 30; // Space for time labels
+        const usableHeight = chartHeight - topMargin - bottomMargin;
+
+        // Price to Y coordinate conversion
+        const priceToY = (price: number): number => {
+            const normalized = (price - bounds.minPrice) / priceRange;
+            // Invert Y so higher prices are at top (lower Y value)
+            return topMargin + usableHeight * (1 - normalized);
+        };
 
         candles.forEach((candle, i) => {
             // Calculate X position
-            const x = i * totalWidth + totalWidth / 2;
+            const x = leftMargin + i * totalWidth + candleWidth / 2;
 
-            // Calculate Y positions (In our world space, Y increases downwards usually in screen coords, 
-            // but we set up Ortho 0..height, so 0 is top.
-            // Price needs to be mapped to Y.
-            // We'll trust the View Matrix to handle Pan/Zoom, but we need to map Price -> World Y.
-            // For simplicity, let's map Price directly to Y inverted or not?
-            // Let's map Price = -Y (so higher price = lower Y value = higher on screen if 0 is top)
-            // OR better: Map 0 at bottom, Height at top.
-            // Deterministic Render set Ortho: 0, width, height, 0 (Top-Left 0,0).
-            // So Y increases downwards.
-            // Higher Price should be smaller Y.
-
-            // We need a Price-to-Y scale. This is usually part of the Transform/View matrix.
-            // But here we might just map data directly if the Viewport handles scale.
-            // Let's assume the data is already in a "World" space or we project it here.
-            // Actually, normally the View Matrix handles X pan/zoom, but Y scale is dynamic based on price range.
-            // To keep it simple: we use a "pixels per dollar" scale.
-
-            // POC: Just scale price by some factor to make it visible
-            const priceScale = 1.0;
-            const yOpen = 600 - candle.open * priceScale;
-            const yClose = 600 - candle.close * priceScale;
-            const yHigh = 600 - candle.high * priceScale;
-            const yLow = 600 - candle.low * priceScale;
+            // Calculate Y positions using proper scaling
+            const yOpen = priceToY(candle.open);
+            const yClose = priceToY(candle.close);
+            const yHigh = priceToY(candle.high);
+            const yLow = priceToY(candle.low);
 
             const isBullish = candle.close >= candle.open;
             const color = isBullish
-                ? [0.0, 0.8, 0.4, 1.0]  // Green
-                : [0.9, 0.3, 0.3, 1.0]; // Red
+                ? [0.15, 0.75, 0.55, 1.0]  // Teal green
+                : [0.94, 0.33, 0.31, 1.0]; // Coral red
 
             const type = candle.complete ? 0.0 : 2.0;
 
@@ -181,21 +207,20 @@ export class CandlestickRenderer {
             vertexIndex += 4;
 
             // Wick (Line/Rect)
-            // High to Max(Open, Close)
             const wickX = x;
-            // const wickW = 1;
+            const wickWidth = Math.max(1, candleWidth * 0.1);
             const bodyTop = top;
             const bodyBottom = finalBottom;
 
-            // Top Wick
-            if (yHigh < bodyTop) {
-                this.addRect(vertexData, indexData, vertexIndex, wickX - 0.5, yHigh, wickX + 0.5, bodyTop, color, 1.0);
+            // Top Wick (from body top to high)
+            if (yHigh < bodyTop - 0.5) {
+                this.addRect(vertexData, indexData, vertexIndex, wickX - wickWidth / 2, yHigh, wickX + wickWidth / 2, bodyTop, color, 1.0);
                 vertexIndex += 4;
             }
 
-            // Bottom Wick
-            if (yLow > bodyBottom) {
-                this.addRect(vertexData, indexData, vertexIndex, wickX - 0.5, bodyBottom, wickX + 0.5, yLow, color, 1.0);
+            // Bottom Wick (from body bottom to low)
+            if (yLow > bodyBottom + 0.5) {
+                this.addRect(vertexData, indexData, vertexIndex, wickX - wickWidth / 2, bodyBottom, wickX + wickWidth / 2, yLow, color, 1.0);
                 vertexIndex += 4;
             }
         });

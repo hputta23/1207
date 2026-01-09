@@ -21,35 +21,74 @@ export class DeterministicRenderer {
     render(state: RenderState): RenderOutput {
         const startTime = performance.now();
 
-        // 1. Clear with deterministic color
+        // 1. Update WebGL viewport to match canvas size
+        this.gl.viewport(0, 0, state.viewport.width, state.viewport.height);
+
+        // 2. Clear with deterministic color
         this.clearCanvas(state.theme);
 
-        // 2. Set up projection (deterministic)
+        // 3. Set up projection (deterministic) - identity view since geometry is in screen coords
         const projMatrix = this.calculateProjection(state.viewport);
-        const viewMatrix = this.calculateView(state.viewport);
+        const viewMatrix = mat4.create(); // Identity matrix - no view transform needed
 
-        // 3. Render Candles
+        // 3. Calculate bounds from data
+        const bounds = this.candlestickRenderer.calculateBounds(state.data.candles);
+        const numCandles = state.data.candles.length;
+
+        // 4. Render Candles
         this.candlestickRenderer.render(
             state.data.candles,
             state.viewport,
             projMatrix,
-            viewMatrix
+            viewMatrix,
+            bounds
         );
 
-        // 4. Render Indicators
+        // 5. Render Indicators - support both old and new format
+        // New dynamic indicators list
+        if (state.data.indicatorList && state.data.indicatorList.length > 0) {
+            for (const indicator of state.data.indicatorList) {
+                const color = this.parseColorToArray(indicator.color);
+                this.lineRenderer.render(
+                    indicator.points,
+                    state.viewport,
+                    projMatrix,
+                    viewMatrix,
+                    color,
+                    bounds,
+                    numCandles
+                );
+            }
+        }
+
+        // Legacy support for old indicator format
         if (state.data.indicators?.sma) {
             this.lineRenderer.render(
                 state.data.indicators.sma,
                 state.viewport,
                 projMatrix,
                 viewMatrix,
-                [1.0, 0.5, 0.0, 1.0] // Orange for SMA
+                [1.0, 0.6, 0.0, 1.0], // Orange for SMA
+                bounds,
+                numCandles
+            );
+        }
+
+        if (state.data.indicators?.ema) {
+            this.lineRenderer.render(
+                state.data.indicators.ema,
+                state.viewport,
+                projMatrix,
+                viewMatrix,
+                [0.4, 0.6, 1.0, 1.0], // Blue for EMA
+                bounds,
+                numCandles
             );
         }
 
         const objectsRendered = state.data.candles.length;
 
-        // 5. Calculate frame hash
+        // 6. Calculate frame hash
         const frameId = this.calculateFrameHash(state);
 
         const renderTime = performance.now() - startTime;
@@ -68,18 +107,6 @@ export class DeterministicRenderer {
         // Orthographic projection: left, right, bottom, top, near, far
         // Coordinate system: (0,0) at top-left
         mat4.ortho(out, 0, viewport.width, viewport.height, 0, -1, 1);
-        return out;
-    }
-
-    private calculateView(viewport: Viewport): mat4 {
-        const out = mat4.create();
-        const { x, y, scale } = viewport;
-
-        // Apply translation and scale
-        // We are effectively moving the camera
-        mat4.translate(out, out, [-x, -y, 0]);
-        mat4.scale(out, out, [scale, scale, 1]);
-
         return out;
     }
 
@@ -110,5 +137,14 @@ export class DeterministicRenderer {
         const g = parseInt(hex.slice(3, 5), 16) / 255;
         const b = parseInt(hex.slice(5, 7), 16) / 255;
         return [r, g, b, 1.0];
+    }
+
+    private parseColorToArray(color: string): [number, number, number, number] {
+        // Handle hex colors
+        if (color.startsWith('#')) {
+            return this.parseColor(color);
+        }
+        // Default fallback
+        return [1.0, 1.0, 1.0, 1.0];
     }
 }
