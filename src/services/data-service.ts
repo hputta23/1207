@@ -14,9 +14,45 @@ export class DataService {
     private updateRateMs = 100; // 100ms updates
     private candleIntervalMs = 1000; // 1s candles for testing
 
-    constructor() {
-        this.generateInitialHistory();
-        this.startSimulation();
+    private isStatic = false;
+
+    constructor(useStaticData = false) {
+        this.isStatic = useStaticData;
+        if (this.isStatic) {
+            this.generateStaticFixture();
+        } else {
+            this.generateInitialHistory();
+            this.startSimulation();
+        }
+    }
+
+    private generateStaticFixture() {
+        const history: any[] = [];
+        const baseTime = 1700000000000; // Fixed timestamp
+        let price = 1500;
+
+        for (let i = 0; i < 50; i++) {
+            const time = baseTime + i * this.candleIntervalMs;
+            const open = price;
+            // Deterministic pattern: Sine wave
+            const close = price + Math.sin(i * 0.2) * 5;
+            const high = Math.max(open, close) + 2;
+            const low = Math.min(open, close) - 1;
+
+            history.push({
+                t: time,
+                o: open,
+                h: high,
+                l: low,
+                c: close,
+                v: 100 + i
+            });
+            price = close;
+        }
+
+        this.currentCandles = DataNormalizer.normalizeArray(history);
+        this.lastPrice = price;
+        this.notifyListeners();
     }
 
     public subscribe(listener: DataListener): () => void {
@@ -57,7 +93,7 @@ export class DataService {
     }
 
     private startSimulation() {
-        if (this.intervalId) return;
+        if (this.intervalId || this.isStatic) return;
 
         this.intervalId = setInterval(() => {
             const now = Date.now();
