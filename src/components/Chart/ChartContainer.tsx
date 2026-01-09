@@ -47,6 +47,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
 
     // UI State for Overlay
     const [crosshair, setCrosshair] = useState<CrosshairState | null>(null);
+    const [renderError, setRenderError] = useState<string | null>(null);
 
     // Initialize Engine
     useEffect(() => {
@@ -55,8 +56,12 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
         // 1. Renderer (might fail if WebGL not supported)
         try {
             rendererRef.current = new DeterministicRenderer(canvasRef.current);
+            setRenderError(null); // Clear any previous errors
         } catch (e) {
-            console.error(`Chart ${id} - Renderer failed to initialize (WebGL error likely):`, e);
+            const errorMsg = e instanceof Error ? e.message : 'Unknown WebGL error';
+            console.error(`Chart ${id} - Renderer failed to initialize:`, e);
+            setRenderError(errorMsg);
+            return; // Don't proceed with interaction setup if renderer failed
         }
 
         let unsubscribeLocal: (() => void) | undefined;
@@ -216,12 +221,42 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
             }}
             onMouseLeave={() => setCrosshair(null)}
         >
-            <canvas
-                ref={canvasRef}
-                style={{ display: 'block' }}
-            />
-            {/* Overlay Layer */}
-            <ChartOverlay width={width} height={height} crosshair={crosshair} />
+            {renderError ? (
+                /* WebGL Error Fallback UI */
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    padding: '40px',
+                    textAlign: 'center',
+                    color: '#888',
+                }}>
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginBottom: '16px', opacity: 0.5 }}>
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 600, color: '#aaa' }}>
+                        WebGL Not Available
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5, maxWidth: '400px' }}>
+                        {renderError}
+                    </p>
+                    <p style={{ margin: '16px 0 0 0', fontSize: '12px', color: '#666' }}>
+                        Try updating your browser or enabling hardware acceleration
+                    </p>
+                </div>
+            ) : (
+                /* Normal Chart Rendering */
+                <>
+                    <canvas
+                        ref={canvasRef}
+                        style={{ display: 'block' }}
+                    />
+                    {/* Overlay Layer */}
+                    <ChartOverlay width={width} height={height} crosshair={crosshair} />
+                </>
+            )}
         </div>
     );
 };

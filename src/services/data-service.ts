@@ -15,14 +15,81 @@ export class DataService {
     private candleIntervalMs = 1000; // 1s candles for testing
 
     private isStatic = false;
+    private currentSymbol = 'SPY';
 
-    constructor(useStaticData = false) {
+    constructor(useStaticData = false, symbol = 'SPY') {
         this.isStatic = useStaticData;
+        this.currentSymbol = symbol;
         if (this.isStatic) {
             this.generateStaticFixture();
         } else {
+            // Start with mock data, will be replaced by fetchHistory
             this.generateInitialHistory();
             this.startSimulation();
+        }
+    }
+
+    /**
+     * Fetch historical data from Yahoo Finance API
+     * Falls back to mock data if API fails
+     */
+    public async fetchHistory(symbol: string, interval = '1d', range = '1mo'): Promise<void> {
+        try {
+            const url = `/api/yahoo/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                console.warn(`Yahoo Finance API returned ${response.status} for ${symbol}`);
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const result = data?.chart?.result?.[0];
+
+            if (!result || !result.timestamp || !result.indicators?.quote?.[0]) {
+                console.warn(`Invalid data structure from Yahoo Finance for ${symbol}`);
+                throw new Error('Invalid data structure');
+            }
+
+            const timestamps = result.timestamp;
+            const quote = result.indicators.quote[0];
+
+            const history: any[] = [];
+            for (let i = 0; i < timestamps.length; i++) {
+                // Skip incomplete candles
+                if (!quote.open[i] || !quote.high[i] || !quote.low[i] || !quote.close[i]) {
+                    continue;
+                }
+
+                history.push({
+                    t: timestamps[i] * 1000, // Convert to milliseconds
+                    o: quote.open[i],
+                    h: quote.high[i],
+                    l: quote.low[i],
+                    c: quote.close[i],
+                    v: quote.volume?.[i] || 0,
+                });
+            }
+
+            if (history.length === 0) {
+                throw new Error('No valid candles in response');
+            }
+
+            // Stop simulation and replace with real data
+            this.stop();
+            this.currentCandles = DataNormalizer.normalizeArray(history);
+            this.lastPrice = history[history.length - 1].c;
+            this.currentSymbol = symbol;
+            this.notifyListeners();
+
+            console.log(`Loaded ${history.length} candles for ${symbol}`);
+        } catch (error) {
+            console.error(`Failed to fetch data for ${symbol}:`, error);
+            console.log(`Falling back to mock data for ${symbol}`);
+
+            // Fallback to mock data
+            this.stop();
+            this.generateStaticFixture();
         }
     }
 
