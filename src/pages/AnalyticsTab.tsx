@@ -6,6 +6,7 @@ import { PriceChart } from '../components/Analytics/PriceChart';
 import { PredictionPanel } from '../components/Analytics/PredictionPanel';
 import { SimulationPanel } from '../components/Analytics/SimulationPanel';
 import { BacktestPanel } from '../components/Analytics/BacktestPanel';
+import { useDataSourceStore } from '../services/data-source-config';
 
 // Tab button component
 const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
@@ -35,17 +36,32 @@ export function AnalyticsTab() {
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [activeTab, setActiveTab] = useState<'technical' | 'prediction' | 'simulation' | 'backtest'>('technical');
 
+    const { selectedSource, sources } = useDataSourceStore();
+
     // Load default data on mount
     useEffect(() => {
         fetchData('AAPL');
     }, []);
+
+    // Refetch when data source changes
+    useEffect(() => {
+        if (ticker) {
+            fetchData(ticker);
+        }
+    }, [selectedSource]);
 
     const fetchData = async (symbol: string) => {
         setLoading(true);
         setError('');
 
         try {
-            const result = await analyticsService.fetchStockData(symbol.toUpperCase(), period);
+            const apiKey = sources[selectedSource]?.apiKey;
+            const result = await analyticsService.fetchStockData(
+                symbol.toUpperCase(),
+                period,
+                selectedSource,
+                apiKey
+            );
             setData(result);
         } catch (err: any) {
             setError(err.message || 'Failed to fetch analytics data');

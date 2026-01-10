@@ -6,7 +6,7 @@ interface AnalyticsCardProps {
     subtitle?: string;
 }
 
-export function AnalyticsCard({ label, value, trend, color = '#3b82f6', subtitle }: AnalyticsCardProps) {
+export function AnalyticsCard({ label, value, trend, subtitle }: AnalyticsCardProps) {
     const getTrendIcon = () => {
         if (trend === 'up') return '↑';
         if (trend === 'down') return '↓';
