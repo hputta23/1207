@@ -4,11 +4,29 @@ import pandas as pd
 import datetime
 from abc import ABC, abstractmethod
 
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, mean_absolute_percentage_error
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.svm import SVR
-from sklearn.model_selection import RandomizedSearchCV
+try:
+    from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, mean_absolute_percentage_error
+    from sklearn.preprocessing import MinMaxScaler
+    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+    from sklearn.svm import SVR
+    from sklearn.model_selection import RandomizedSearchCV
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
+    print("scikit-learn not found. Advanced predictions disabled.")
+    
+    # Mock classes/functions to prevent ImportErrors
+    class MinMaxScaler:
+        def __init__(self, feature_range=(0, 1)): pass
+        def fit_transform(self, data): return data
+        def transform(self, data): return data
+        def inverse_transform(self, data): return data
+        
+    def mean_absolute_error(*args): return 0
+    def mean_squared_error(*args): return 0
+    def r2_score(*args): return 0
+    def mean_absolute_percentage_error(*args): return 0
+    
 import math
 from scipy.stats import norm
 
