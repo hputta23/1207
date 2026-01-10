@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { watchlistService } from '../../services/watchlist-service';
+import { activityService } from '../../services/activity-service';
 
 const POPULAR_STOCKS = [
     { symbol: 'AAPL', name: 'Apple Inc.' },
@@ -54,8 +55,10 @@ export function QuickSearch() {
         } else if (action === 'watchlist') {
             if (watchlistService.hasTicker(symbol)) {
                 watchlistService.removeTicker(symbol);
+                activityService.addActivity('remove_watchlist', symbol);
             } else {
                 watchlistService.addTicker(symbol);
+                activityService.addActivity('add_watchlist', symbol);
             }
         }
         setQuery('');

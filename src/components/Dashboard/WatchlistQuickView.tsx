@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { watchlistService } from '../../services/watchlist-service';
+import { activityService } from '../../services/activity-service';
 
 interface StockQuote {
     symbol: string;
@@ -82,6 +83,7 @@ export function WatchlistQuickView() {
     const handleRemove = (symbol: string, e: React.MouseEvent) => {
         e.stopPropagation();
         watchlistService.removeTicker(symbol);
+        activityService.addActivity('remove_watchlist', symbol);
     };
 
     if (watchlist.length === 0) {

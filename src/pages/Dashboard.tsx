@@ -6,6 +6,7 @@ import { MarketOverview } from '../components/Dashboard/MarketOverview';
 import { QuickSearch } from '../components/Dashboard/QuickSearch';
 import { WatchlistQuickView } from '../components/Dashboard/WatchlistQuickView';
 import { TrendingStocks } from '../components/Dashboard/TrendingStocks';
+import { RecentActivity } from '../components/Dashboard/RecentActivity';
 
 export function Dashboard() {
     const navigate = useNavigate();
@@ -100,6 +101,9 @@ export function Dashboard() {
 
                 {/* Trending Stocks */}
                 <TrendingStocks />
+
+                {/* Recent Activity */}
+                <RecentActivity />
 
                 {/* Quick Stats */}
                 <div style={{

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { trendingStocksService, type TrendingStock } from '../../services/trending-stocks-service';
 import { watchlistService } from '../../services/watchlist-service';
+import { activityService } from '../../services/activity-service';
 
 export function TrendingStocks() {
     const [gainers, setGainers] = useState<TrendingStock[]>([]);
@@ -31,8 +32,10 @@ export function TrendingStocks() {
         e.stopPropagation();
         if (watchlistService.hasTicker(symbol)) {
             watchlistService.removeTicker(symbol);
+            activityService.addActivity('remove_watchlist', symbol);
         } else {
             watchlistService.addTicker(symbol);
+            activityService.addActivity('add_watchlist', symbol);
         }
     };
 
