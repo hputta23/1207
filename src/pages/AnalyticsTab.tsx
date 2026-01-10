@@ -7,6 +7,7 @@ import { PredictionPanel } from '../components/Analytics/PredictionPanel';
 import { SimulationPanel } from '../components/Analytics/SimulationPanel';
 import { BacktestPanel } from '../components/Analytics/BacktestPanel';
 import { useDataSourceStore } from '../services/data-source-config';
+import { DataSourceSelector } from '../components/DataSourceSelector/DataSourceSelector';
 
 // Tab button component
 const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
@@ -162,6 +163,7 @@ export function AnalyticsTab() {
                             <option value="1y">1 Year</option>
                             <option value="2y">2 Years</option>
                         </select>
+                        <DataSourceSelector />
                         <button
                             type="submit"
                             disabled={loading}
