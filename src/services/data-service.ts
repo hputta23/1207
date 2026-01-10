@@ -1,25 +1,34 @@
 import { DataNormalizer } from '../core/data/normalizer';
 import type { Candle } from '../core/renderer/types';
+import type { DataSourceType } from './data-source-config';
 
 type DataListener = (data: Candle[]) => void;
+
+export interface DataServiceConfig {
+    dataSource: DataSourceType;
+    apiKey?: string;
+}
 
 export class DataService {
     private listeners = new Set<DataListener>();
     private intervalId: any = null;
     private currentCandles: Candle[] = [];
     private lastPrice = 1000;
-    // private lastTimestamp = Date.now();
+    private lastFetchTime = 0;
+    private fetchRetryCount = 0;
+    private maxRetries = 3;
 
     // Config
     private updateRateMs = 100; // 100ms updates
     private candleIntervalMs = 1000; // 1s candles for testing
 
     private isStatic = false;
-    private currentSymbol = 'SPY';
+    private config: DataServiceConfig;
 
-    constructor(useStaticData = false, symbol = 'SPY') {
+    constructor(useStaticData = false, _symbol = 'SPY', config?: DataServiceConfig) {
         this.isStatic = useStaticData;
-        this.currentSymbol = symbol;
+        this.config = config || { dataSource: 'yahoo' };
+
         if (this.isStatic) {
             this.generateStaticFixture();
         } else {
@@ -29,46 +38,34 @@ export class DataService {
         }
     }
 
+    public updateConfig(config: DataServiceConfig) {
+        this.config = config;
+    }
+
     /**
-     * Fetch historical data from Yahoo Finance API
+     * Fetch historical data from selected data source
      * Falls back to mock data if API fails
      */
     public async fetchHistory(symbol: string, interval = '1d', range = '1mo'): Promise<void> {
+        const now = Date.now();
+
+        // Prevent too frequent refetches (rate limiting)
+        if (now - this.lastFetchTime < 5000) {
+            console.log('Skipping fetch - too soon after last fetch');
+            return;
+        }
+
         try {
-            const url = `/api/yahoo/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
-            const response = await fetch(url);
+            this.lastFetchTime = now;
+            let history: any[] = [];
 
-            if (!response.ok) {
-                console.warn(`Yahoo Finance API returned ${response.status} for ${symbol}`);
-                throw new Error(`HTTP ${response.status}`);
+            // Use Yahoo Finance via Vite proxy for direct API access
+            if (this.config.dataSource === 'yahoo') {
+                history = await this.fetchFromYahoo(symbol, interval, range);
             }
-
-            const data = await response.json();
-            const result = data?.chart?.result?.[0];
-
-            if (!result || !result.timestamp || !result.indicators?.quote?.[0]) {
-                console.warn(`Invalid data structure from Yahoo Finance for ${symbol}`);
-                throw new Error('Invalid data structure');
-            }
-
-            const timestamps = result.timestamp;
-            const quote = result.indicators.quote[0];
-
-            const history: any[] = [];
-            for (let i = 0; i < timestamps.length; i++) {
-                // Skip incomplete candles
-                if (!quote.open[i] || !quote.high[i] || !quote.low[i] || !quote.close[i]) {
-                    continue;
-                }
-
-                history.push({
-                    t: timestamps[i] * 1000, // Convert to milliseconds
-                    o: quote.open[i],
-                    h: quote.high[i],
-                    l: quote.low[i],
-                    c: quote.close[i],
-                    v: quote.volume?.[i] || 0,
-                });
+            // Use backend for other data sources
+            else {
+                history = await this.fetchFromBackend(symbol, range);
             }
 
             if (history.length === 0) {
@@ -79,18 +76,104 @@ export class DataService {
             this.stop();
             this.currentCandles = DataNormalizer.normalizeArray(history);
             this.lastPrice = history[history.length - 1].c;
-            this.currentSymbol = symbol;
+            this.fetchRetryCount = 0; // Reset retry count on success
             this.notifyListeners();
 
-            console.log(`Loaded ${history.length} candles for ${symbol}`);
-        } catch (error) {
-            console.error(`Failed to fetch data for ${symbol}:`, error);
-            console.log(`Falling back to mock data for ${symbol}`);
+            console.log(`✅ Loaded ${history.length} candles for ${symbol} from ${this.config.dataSource}`);
 
-            // Fallback to mock data
-            this.stop();
-            this.generateStaticFixture();
+            // Start live updates simulation (approximates real-time updates)
+            this.startSimulation();
+
+        } catch (error) {
+            console.error(`❌ Failed to fetch data for ${symbol} from ${this.config.dataSource}:`, error);
+
+            // Retry logic
+            if (this.fetchRetryCount < this.maxRetries) {
+                this.fetchRetryCount++;
+                const retryDelay = Math.pow(2, this.fetchRetryCount) * 1000; // Exponential backoff
+                console.log(`Retrying in ${retryDelay}ms... (attempt ${this.fetchRetryCount}/${this.maxRetries})`);
+
+                setTimeout(() => {
+                    this.fetchHistory(symbol, interval, range);
+                }, retryDelay);
+            } else {
+                console.log(`⚠️ Max retries reached. Falling back to mock data for ${symbol}`);
+                this.fetchRetryCount = 0;
+
+                // Fallback to mock data
+                this.stop();
+                this.generateStaticFixture();
+            }
         }
+    }
+
+    private async fetchFromYahoo(symbol: string, interval: string, range: string): Promise<any[]> {
+        const url = `/api/yahoo/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`Yahoo Finance API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        const result = data?.chart?.result?.[0];
+
+        if (!result || !result.timestamp || !result.indicators?.quote?.[0]) {
+            throw new Error('Invalid data structure from Yahoo Finance');
+        }
+
+        const timestamps = result.timestamp;
+        const quote = result.indicators.quote[0];
+
+        const history: any[] = [];
+        for (let i = 0; i < timestamps.length; i++) {
+            // Skip incomplete candles
+            if (!quote.open[i] || !quote.high[i] || !quote.low[i] || !quote.close[i]) {
+                continue;
+            }
+
+            history.push({
+                t: timestamps[i] * 1000, // Convert to milliseconds
+                o: quote.open[i],
+                h: quote.high[i],
+                l: quote.low[i],
+                c: quote.close[i],
+                v: quote.volume?.[i] || 0,
+            });
+        }
+
+        return history;
+    }
+
+    private async fetchFromBackend(symbol: string, period: string): Promise<any[]> {
+        const response = await fetch('http://localhost:8000/history', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ticker: symbol,
+                period: period,
+                api_source: this.config.dataSource,
+                api_key: this.config.apiKey,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Backend API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        const historyData = data?.history || [];
+
+        return historyData.map((item: any) => ({
+            t: new Date(item.date).getTime(),
+            o: item.open,
+            h: item.high,
+            l: item.low,
+            c: item.close,
+            v: item.volume,
+        }));
     }
 
     private generateStaticFixture() {

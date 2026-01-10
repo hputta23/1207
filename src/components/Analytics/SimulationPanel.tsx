@@ -74,7 +74,7 @@ export function SimulationPanel({ ticker }: SimulationPanelProps) {
                 rawPaths.forEach((path: number[]) => {
                     path.forEach((val, idx) => meanPath[idx] += val);
                 });
-                meanPath.forEach((val, idx) => meanPath[idx] /= rawPaths.length);
+                meanPath.forEach((_val, idx) => meanPath[idx] /= rawPaths.length);
 
                 traces.push({
                     y: meanPath,

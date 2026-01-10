@@ -49,9 +49,9 @@ class AnalyticsService {
         this.cache = new Map();
     }
 
-    async fetchStockData(ticker: string, period: string = '6mo'): Promise<AnalyticsData> {
+    async fetchStockData(ticker: string, period: string = '6mo', apiSource: string = 'yahoo', apiKey?: string): Promise<AnalyticsData> {
         // Check cache
-        const cacheKey = `${ticker}_${period}`;
+        const cacheKey = `${ticker}_${period}_${apiSource}`;
         const cached = this.cache.get(cacheKey);
         if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
             return cached.data;
@@ -67,7 +67,8 @@ class AnalyticsService {
                 body: JSON.stringify({
                     ticker: ticker,
                     period: period,
-                    api_source: 'yahoo'
+                    api_source: apiSource,
+                    api_key: apiKey
                 })
             });
 
@@ -116,22 +117,8 @@ class AnalyticsService {
         }
     }
 
-    private getInterval(period: string): string {
-        const periodMap: Record<string, string> = {
-            '1mo': '1d',
-            '3mo': '1d',
-            '6mo': '1d',
-            '1y': '1d',
-            '2y': '1wk',
-            '5y': '1wk',
-        };
-        return periodMap[period] || '1d';
-    }
-
     calculateTechnicalIndicators(data: StockData[]): TechnicalIndicators {
         const closes = data.map(d => d.close);
-        const highs = data.map(d => d.high);
-        const lows = data.map(d => d.low);
 
         const indicators: TechnicalIndicators = {};
 

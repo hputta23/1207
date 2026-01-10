@@ -79,8 +79,8 @@ export function PredictionPanel({ ticker }: PredictionPanelProps) {
             // Trace 2: Prediction (Future)
 
             // Create a gap-less line by including the last historical point in prediction
-            let predictionDates = [];
-            let predictionValues = [];
+            let predictionDates: string[] = [];
+            let predictionValues: number[] = [];
 
             if (actual.length > 0 && predicted.length > 0) {
                 predictionDates = [dates[actual.length - 1], ...dates.slice(actual.length)];

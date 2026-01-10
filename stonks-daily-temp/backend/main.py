@@ -70,11 +70,12 @@ class HistoryRequest(BaseModel):
     ticker: str
     period: str = "2y"
     api_source: str = "yahoo"
+    api_key: str = None
 
 @app.post("/history")
 async def get_history(request: HistoryRequest):
     try:
-        data = fetch_stock_data(request.ticker, period=request.period, api_source=request.api_source)
+        data = fetch_stock_data(request.ticker, period=request.period, api_source=request.api_source, api_key=request.api_key)
         
         # Minimize payload, we only need date and close for comparison
         historical_data = []

@@ -2,11 +2,13 @@ import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useStore } from '../state/store';
 import { ChartContainer } from '../components/Chart/ChartContainer';
 import { TimeSyncManager } from '../core/synchronization/time-sync-manager';
-import { DataService } from '../services/data-service';
+import { DataService, type DataServiceConfig } from '../services/data-service';
 import { useDimensions } from '../hooks/useDimensions';
 import { Indicators } from '../core/data/indicators';
 import { TickerSearch } from '../components/TickerSearch/TickerSearch';
 import { IndicatorSelector, type IndicatorConfig } from '../components/IndicatorSelector/IndicatorSelector';
+import { DataSourceSelector } from '../components/DataSourceSelector/DataSourceSelector';
+import { useDataSourceStore } from '../services/data-source-config';
 import type { Candle } from '../core/renderer/types';
 
 // Chart configuration interface
@@ -213,13 +215,20 @@ const ChartPanel: React.FC<ChartPanelProps> = ({
     transform,
 }) => {
     const { ref: chartRef, dimensions } = useDimensions<HTMLDivElement>();
+    const { selectedSource, sources } = useDataSourceStore();
 
     const [candles, setCandles] = useState<Candle[]>([]);
     const dataServiceRef = useRef<DataService | null>(null);
 
+    // Get data source config
+    const dataSourceConfig: DataServiceConfig = useMemo(() => ({
+        dataSource: selectedSource,
+        apiKey: sources[selectedSource]?.apiKey,
+    }), [selectedSource, sources]);
+
     if (!dataServiceRef.current) {
         const isTestMode = new URLSearchParams(window.location.search).get('mode') === 'test';
-        dataServiceRef.current = new DataService(isTestMode, config.symbol);
+        dataServiceRef.current = new DataService(isTestMode, config.symbol, dataSourceConfig);
     }
 
     useEffect(() => {
@@ -230,11 +239,13 @@ const ChartPanel: React.FC<ChartPanelProps> = ({
         };
     }, []);
 
+    // Update data service config when data source changes
     useEffect(() => {
         if (dataServiceRef.current) {
+            dataServiceRef.current.updateConfig(dataSourceConfig);
             dataServiceRef.current.fetchHistory(config.symbol, '1d', '1mo');
         }
-    }, [config.symbol]);
+    }, [dataSourceConfig, config.symbol]);
 
     const lastPrice = candles.length > 0 ? candles[candles.length - 1].close : undefined;
     const firstPrice = candles.length > 0 ? candles[0].open : undefined;
@@ -368,6 +379,8 @@ export function ChartsPage() {
                             Live
                         </span>
                     </div>
+
+                    <DataSourceSelector />
 
                     <button
                         onClick={addChart}

@@ -1,14 +1,17 @@
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
+import requests
+import os
 
-def fetch_stock_data(ticker: str, period: str = "2y", api_source: str = "yahoo"):
+def fetch_stock_data(ticker: str, period: str = "2y", api_source: str = "yahoo", api_key: str = None):
     """
     Fetches historical stock data for the given ticker.
     Args:
         ticker: Stock symbol (e.g., 'AAPL')
         period: Data period to fetch (default '2y' for sufficient training data)
-        api_source: Data source ('yahoo', 'alpha_vantage', 'mock')
+        api_source: Data source ('yahoo', 'alpha_vantage', 'finnhub', 'polygon', 'mock')
+        api_key: API key for premium data sources (optional)
     Returns:
         DataFrame with Date and Close price.
     """
@@ -16,13 +19,20 @@ def fetch_stock_data(ticker: str, period: str = "2y", api_source: str = "yahoo")
         # Mock Data Logic
         if api_source == "mock":
             return generate_mock_data(ticker, period)
-            
-        # Fallback / Default to Yahoo Finance
-        if api_source != "yahoo":
-            # For now, we only fully support Yahoo. 
-            # Alpha Vantage would go here.
-            print(f"Warning: API source '{api_source}' not fully implemented. Falling back to Yahoo Finance.")
-        
+
+        # Alpha Vantage
+        if api_source == "alpha_vantage":
+            return fetch_alpha_vantage_data(ticker, period, api_key)
+
+        # Finnhub
+        if api_source == "finnhub":
+            return fetch_finnhub_data(ticker, period, api_key)
+
+        # Polygon.io
+        if api_source == "polygon":
+            return fetch_polygon_data(ticker, period, api_key)
+
+        # Default to Yahoo Finance
         stock = yf.Ticker(ticker)
         
         # Enforce minimum period of 6mo for models (need 60 days look_back)
@@ -74,6 +84,156 @@ def generate_mock_data(ticker, period):
     
     # Add Technical Indicators
     return add_technical_indicators(df)
+
+def fetch_alpha_vantage_data(ticker: str, period: str, api_key: str):
+    """Fetch data from Alpha Vantage API"""
+    if not api_key:
+        raise ValueError("Alpha Vantage API key is required")
+
+    # Map period to Alpha Vantage outputsize
+    outputsize = 'full' if period in ['2y', '5y', 'max'] else 'compact'
+
+    url = f"https://www.alphavantage.co/query"
+    params = {
+        'function': 'TIME_SERIES_DAILY',
+        'symbol': ticker,
+        'apikey': api_key,
+        'outputsize': outputsize,
+        'datatype': 'json'
+    }
+
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+
+    if 'Error Message' in data:
+        raise ValueError(f"Alpha Vantage error: {data['Error Message']}")
+
+    if 'Note' in data:
+        raise ValueError("Alpha Vantage API call frequency limit reached")
+
+    time_series = data.get('Time Series (Daily)', {})
+    if not time_series:
+        raise ValueError(f"No data found for {ticker}")
+
+    # Convert to DataFrame
+    df_data = []
+    for date_str, values in time_series.items():
+        df_data.append({
+            'Date': pd.to_datetime(date_str),
+            'Open': float(values['1. open']),
+            'High': float(values['2. high']),
+            'Low': float(values['3. low']),
+            'Close': float(values['4. close']),
+            'Volume': float(values['5. volume'])
+        })
+
+    df = pd.DataFrame(df_data)
+    df = df.sort_values('Date').reset_index(drop=True)
+
+    # Filter by period
+    df = filter_by_period(df, period)
+
+    return add_technical_indicators(df)
+
+def fetch_finnhub_data(ticker: str, period: str, api_key: str):
+    """Fetch data from Finnhub API"""
+    if not api_key:
+        raise ValueError("Finnhub API key is required")
+
+    # Calculate date range
+    end_date = datetime.now()
+    period_map = {
+        '1mo': 30, '3mo': 90, '6mo': 180,
+        '1y': 365, '2y': 730, '5y': 1825, 'max': 3650
+    }
+    days = period_map.get(period, 730)
+    start_date = end_date - timedelta(days=days)
+
+    url = "https://finnhub.io/api/v1/stock/candle"
+    params = {
+        'symbol': ticker,
+        'resolution': 'D',  # Daily
+        'from': int(start_date.timestamp()),
+        'to': int(end_date.timestamp()),
+        'token': api_key
+    }
+
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+
+    if data.get('s') == 'no_data':
+        raise ValueError(f"No data found for {ticker}")
+
+    # Convert to DataFrame
+    df = pd.DataFrame({
+        'Date': pd.to_datetime(data['t'], unit='s'),
+        'Open': data['o'],
+        'High': data['h'],
+        'Low': data['l'],
+        'Close': data['c'],
+        'Volume': data['v']
+    })
+
+    df = df.sort_values('Date').reset_index(drop=True)
+    return add_technical_indicators(df)
+
+def fetch_polygon_data(ticker: str, period: str, api_key: str):
+    """Fetch data from Polygon.io API"""
+    if not api_key:
+        raise ValueError("Polygon.io API key is required")
+
+    # Calculate date range
+    end_date = datetime.now()
+    period_map = {
+        '1mo': 30, '3mo': 90, '6mo': 180,
+        '1y': 365, '2y': 730, '5y': 1825, 'max': 3650
+    }
+    days = period_map.get(period, 730)
+    start_date = end_date - timedelta(days=days)
+
+    url = f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/1/day/{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}"
+    params = {
+        'adjusted': 'true',
+        'sort': 'asc',
+        'apiKey': api_key
+    }
+
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+
+    if data.get('status') != 'OK' or not data.get('results'):
+        raise ValueError(f"No data found for {ticker}")
+
+    # Convert to DataFrame
+    results = data['results']
+    df = pd.DataFrame({
+        'Date': pd.to_datetime([r['t'] for r in results], unit='ms'),
+        'Open': [r['o'] for r in results],
+        'High': [r['h'] for r in results],
+        'Low': [r['l'] for r in results],
+        'Close': [r['c'] for r in results],
+        'Volume': [r['v'] for r in results]
+    })
+
+    df = df.sort_values('Date').reset_index(drop=True)
+    return add_technical_indicators(df)
+
+def filter_by_period(df: pd.DataFrame, period: str):
+    """Filter dataframe by period"""
+    if period == 'max':
+        return df
+
+    period_map = {
+        '1mo': 30, '3mo': 90, '6mo': 180,
+        '1y': 365, '2y': 730, '5y': 1825
+    }
+    days = period_map.get(period, 730)
+
+    cutoff_date = datetime.now() - timedelta(days=days)
+    return df[df['Date'] >= cutoff_date].reset_index(drop=True)
 
 def add_technical_indicators(data):
     """
