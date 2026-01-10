@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth-context';
 import { watchlistService } from '../services/watchlist-service';
+import { MarketOverview } from '../components/Dashboard/MarketOverview';
+import { QuickSearch } from '../components/Dashboard/QuickSearch';
+import { WatchlistQuickView } from '../components/Dashboard/WatchlistQuickView';
 
 export function Dashboard() {
     const navigate = useNavigate();
@@ -84,6 +87,15 @@ export function Dashboard() {
                         {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                 </div>
+
+                {/* Quick Search */}
+                <QuickSearch />
+
+                {/* Market Overview */}
+                <MarketOverview />
+
+                {/* Watchlist Quick View */}
+                <WatchlistQuickView />
 
                 {/* Quick Stats */}
                 <div style={{
