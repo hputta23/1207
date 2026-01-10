@@ -1,6 +1,7 @@
 services:
   - type: web
     name: terminal-pro-1207
+    plan: free
     env: python
     buildCommand: ./build.sh
     startCommand: uvicorn stonks-daily-temp.backend.main:app --host 0.0.0.0 --port $PORT
