@@ -5,6 +5,7 @@ import { watchlistService } from '../services/watchlist-service';
 import { MarketOverview } from '../components/Dashboard/MarketOverview';
 import { QuickSearch } from '../components/Dashboard/QuickSearch';
 import { WatchlistQuickView } from '../components/Dashboard/WatchlistQuickView';
+import { TrendingStocks } from '../components/Dashboard/TrendingStocks';
 
 export function Dashboard() {
     const navigate = useNavigate();
@@ -96,6 +97,9 @@ export function Dashboard() {
 
                 {/* Watchlist Quick View */}
                 <WatchlistQuickView />
+
+                {/* Trending Stocks */}
+                <TrendingStocks />
 
                 {/* Quick Stats */}
                 <div style={{
