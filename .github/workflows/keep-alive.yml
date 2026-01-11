@@ -1,0 +1,24 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Run every 14 minutes (Render sleeps after 15 minutes of inactivity)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Backend
+        run: |
+          # Replace with your actual backend URL or use a Secret
+          URL="${{ secrets.RENDER_BACKEND_URL }}"
+          
+          if [ -z "$URL" ]; then
+            echo "RENDER_BACKEND_URL secret is not set. Please set it in Settings -> Secrets."
+            exit 1
+          fi
+
+          echo "Pinging $URL..."
+          curl -I "$URL/health" || curl -I "$URL"
