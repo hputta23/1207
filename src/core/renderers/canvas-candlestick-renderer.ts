@@ -1,4 +1,4 @@
-import type { Candle, Viewport, RenderState } from '../renderer/types';
+import type { Candle, Viewport } from '../renderer/types';
 
 export interface RenderBounds {
     minPrice: number;
