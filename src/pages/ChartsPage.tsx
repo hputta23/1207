@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useStore } from '../state/store';
+import { useSearchParams } from 'react-router-dom';
 import { ChartContainer } from '../components/Chart/ChartContainer';
 import { TimeSyncManager } from '../core/synchronization/time-sync-manager';
 import { DataService, type DataServiceConfig } from '../services/data-service';
@@ -9,6 +10,7 @@ import { TickerSearch } from '../components/TickerSearch/TickerSearch';
 import { IndicatorSelector, type IndicatorConfig } from '../components/IndicatorSelector/IndicatorSelector';
 import { DataSourceSelector } from '../components/DataSourceSelector/DataSourceSelector';
 import { useDataSourceStore } from '../services/data-source-config';
+import { activityService } from '../services/activity-service';
 import type { Candle } from '../core/renderer/types';
 
 // Chart configuration interface
@@ -53,15 +55,16 @@ const ChartPanelHeader: React.FC<ChartPanelHeaderProps> = ({
             top: 0,
             left: 0,
             right: 0,
-            height: '44px',
+            minHeight: '44px',
             background: 'linear-gradient(180deg, rgba(18,18,18,0.95) 0%, rgba(18,18,18,0.85) 100%)',
             borderBottom: '1px solid #2a2a2a',
             display: 'flex',
             alignItems: 'center',
-            padding: '0 12px',
-            gap: '12px',
+            padding: 'clamp(4px, 1vw, 12px)',
+            gap: 'clamp(4px, 1vw, 12px)',
             zIndex: 50,
             backdropFilter: 'blur(8px)',
+            flexWrap: 'wrap',
         }}>
             {/* Remove Chart Button - Moved to start for visibility */}
             {canRemove && onRemove && (
@@ -310,6 +313,7 @@ const ChartPanel: React.FC<ChartPanelProps> = ({
 
 export function ChartsPage() {
     const workspace = useStore((state) => state.workspace);
+    const [searchParams] = useSearchParams();
 
     const [charts, setCharts] = useState<ChartConfig[]>([
         { id: generateId(), symbol: 'SPY', indicators: [{ id: 'sma', name: 'SMA 20', period: 20, color: '#f59e0b', enabled: true }] },
@@ -318,6 +322,23 @@ export function ChartsPage() {
 
     const syncManagerRef = useRef<TimeSyncManager | null>(null);
     if (!syncManagerRef.current) syncManagerRef.current = new TimeSyncManager();
+
+    // Handle URL parameter for symbol and track activity
+    useEffect(() => {
+        const symbol = searchParams.get('symbol');
+        if (symbol) {
+            // Set first chart to the requested symbol
+            setCharts(prev => {
+                if (prev[0]) {
+                    return [{ ...prev[0], symbol: symbol.toUpperCase() }, ...prev.slice(1)];
+                }
+                return prev;
+            });
+
+            // Track activity
+            activityService.addActivity('view_chart', symbol.toUpperCase());
+        }
+    }, [searchParams]);
 
     const addChart = useCallback(() => {
         setCharts(prev => [
@@ -344,15 +365,17 @@ export function ChartsPage() {
         }}>
             {/* Header Bar */}
             <div style={{
-                height: '40px',
+                minHeight: '40px',
                 background: '#111',
                 borderBottom: '1px solid #222',
                 display: 'flex',
                 alignItems: 'center',
-                padding: '0 16px',
+                padding: 'clamp(8px, 2vw, 16px)',
                 justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 16px)', flexWrap: 'wrap' }}>
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -423,8 +446,8 @@ export function ChartsPage() {
             <div style={{
                 height: 'calc(100vh - 40px)',
                 display: 'grid',
-                gridTemplateColumns: charts.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))',
-                gridTemplateRows: charts.length <= 2 ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
+                gridTemplateColumns: charts.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))',
+                gridTemplateRows: charts.length <= 2 ? '1fr' : 'repeat(auto-fit, minmax(min(300px, 50vh), 1fr))',
                 gap: '1px',
                 background: '#222',
             }}>

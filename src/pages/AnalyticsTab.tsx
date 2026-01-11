@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { analyticsService } from '../services/analytics-service';
 import type { AnalyticsData } from '../services/analytics-service';
 import { AnalyticsCard } from '../components/Analytics/AnalyticsCard';
@@ -7,6 +8,8 @@ import { PredictionPanel } from '../components/Analytics/PredictionPanel';
 import { SimulationPanel } from '../components/Analytics/SimulationPanel';
 import { BacktestPanel } from '../components/Analytics/BacktestPanel';
 import { useDataSourceStore } from '../services/data-source-config';
+import { DataSourceSelector } from '../components/DataSourceSelector/DataSourceSelector';
+import { activityService } from '../services/activity-service';
 
 // Tab button component
 const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
@@ -29,6 +32,7 @@ const TabButton = ({ active, onClick, children }: { active: boolean; onClick: ()
 );
 
 export function AnalyticsTab() {
+    const [searchParams] = useSearchParams();
     const [ticker, setTicker] = useState('AAPL'); // Default to AAPL
     const [period, setPeriod] = useState('6mo');
     const [loading, setLoading] = useState(false);
@@ -38,10 +42,19 @@ export function AnalyticsTab() {
 
     const { selectedSource, sources } = useDataSourceStore();
 
-    // Load default data on mount
+    // Handle URL parameter for symbol
     useEffect(() => {
-        fetchData('AAPL');
-    }, []);
+        const symbol = searchParams.get('symbol');
+        if (symbol) {
+            const upperSymbol = symbol.toUpperCase();
+            setTicker(upperSymbol);
+            fetchData(upperSymbol);
+            activityService.addActivity('run_analysis', upperSymbol);
+        } else {
+            // Load default data on mount if no URL param
+            fetchData('AAPL');
+        }
+    }, [searchParams]);
 
     // Refetch when data source changes
     useEffect(() => {
@@ -77,6 +90,7 @@ export function AnalyticsTab() {
             setError('Please enter a ticker symbol');
             return;
         }
+        activityService.addActivity('run_analysis', ticker.toUpperCase());
         fetchData(ticker);
     };
 
@@ -162,6 +176,7 @@ export function AnalyticsTab() {
                             <option value="1y">1 Year</option>
                             <option value="2y">2 Years</option>
                         </select>
+                        <DataSourceSelector />
                         <button
                             type="submit"
                             disabled={loading}
@@ -237,6 +252,49 @@ export function AnalyticsTab() {
                                 value={data.statistics.trend.toUpperCase()}
                                 trend={data.statistics.trend === 'bullish' ? 'up' : data.statistics.trend === 'bearish' ? 'down' : 'neutral'}
                             />
+                            {data.indicators.rsi && data.indicators.rsi.length > 0 && (
+                                <AnalyticsCard
+                                    label="RSI (14)"
+                                    value={data.indicators.rsi[data.indicators.rsi.length - 1].toFixed(2)}
+                                    subtitle={
+                                        data.indicators.rsi[data.indicators.rsi.length - 1] > 70 ? 'Overbought' :
+                                        data.indicators.rsi[data.indicators.rsi.length - 1] < 30 ? 'Oversold' : 'Neutral'
+                                    }
+                                    trend={
+                                        data.indicators.rsi[data.indicators.rsi.length - 1] > 70 ? 'down' :
+                                        data.indicators.rsi[data.indicators.rsi.length - 1] < 30 ? 'up' : 'neutral'
+                                    }
+                                />
+                            )}
+                            {data.indicators.macd && data.indicators.macd.MACD.length > 0 && (
+                                <AnalyticsCard
+                                    label="MACD"
+                                    value={data.indicators.macd.MACD[data.indicators.macd.MACD.length - 1].toFixed(2)}
+                                    subtitle={
+                                        data.indicators.macd.MACD[data.indicators.macd.MACD.length - 1] >
+                                        data.indicators.macd.signal[data.indicators.macd.signal.length - 1]
+                                            ? 'Bullish Signal'
+                                            : 'Bearish Signal'
+                                    }
+                                    trend={
+                                        data.indicators.macd.MACD[data.indicators.macd.MACD.length - 1] >
+                                        data.indicators.macd.signal[data.indicators.macd.signal.length - 1]
+                                            ? 'up'
+                                            : 'down'
+                                    }
+                                />
+                            )}
+                            {data.indicators.bollingerBands && data.indicators.bollingerBands.upper.length > 0 && (
+                                <AnalyticsCard
+                                    label="Bollinger Bands"
+                                    value={formatCurrency(data.indicators.bollingerBands.middle[data.indicators.bollingerBands.middle.length - 1])}
+                                    subtitle={`Width: ${(
+                                        ((data.indicators.bollingerBands.upper[data.indicators.bollingerBands.upper.length - 1] -
+                                        data.indicators.bollingerBands.lower[data.indicators.bollingerBands.lower.length - 1]) /
+                                        data.indicators.bollingerBands.middle[data.indicators.bollingerBands.middle.length - 1]) * 100
+                                    ).toFixed(2)}%`}
+                                />
+                            )}
                         </div>
 
                         {/* Tabs */}
@@ -274,8 +332,6 @@ export function AnalyticsTab() {
                             <div>
                                 <div style={{ marginBottom: '10px', color: '#aaa', fontSize: '14px' }}>
                                     Test trading strategies against historical data.
-                                    <br />
-                                    <span style={{ color: '#fbbf24', fontSize: '12px' }}>⚠ Requires backend server running on port 8000</span>
                                 </div>
                                 <BacktestPanel ticker={data.ticker} />
                             </div>

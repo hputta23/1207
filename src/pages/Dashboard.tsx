@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth-context';
 import { watchlistService } from '../services/watchlist-service';
+import { MarketOverview } from '../components/Dashboard/MarketOverview';
+import { QuickSearch } from '../components/Dashboard/QuickSearch';
+import { WatchlistQuickView } from '../components/Dashboard/WatchlistQuickView';
+import { TrendingStocks } from '../components/Dashboard/TrendingStocks';
+import { RecentActivity } from '../components/Dashboard/RecentActivity';
+import { NewsFeed } from '../components/Dashboard/NewsFeed';
 
 export function Dashboard() {
     const navigate = useNavigate();
@@ -61,17 +67,17 @@ export function Dashboard() {
     return (
         <div style={{
             width: '100%',
-            height: '100vh',
+            minHeight: '100vh',
             background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)',
             overflow: 'auto',
-            padding: '40px',
+            padding: 'clamp(16px, 5vw, 40px)',
         }}>
             {/* Welcome Section */}
             <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                <div style={{ marginBottom: '40px' }}>
+                <div style={{ marginBottom: 'clamp(24px, 5vw, 40px)' }}>
                     <h1 style={{
                         margin: '0 0 8px 0',
-                        fontSize: '36px',
+                        fontSize: 'clamp(24px, 6vw, 36px)',
                         fontWeight: 700,
                         background: 'linear-gradient(135deg, #fff 0%, #aaa 100%)',
                         WebkitBackgroundClip: 'text',
@@ -80,10 +86,28 @@ export function Dashboard() {
                     }}>
                         Welcome back, {user?.username || 'Trader'}
                     </h1>
-                    <p style={{ margin: 0, fontSize: '16px', color: '#888' }}>
+                    <p style={{ margin: 0, fontSize: 'clamp(13px, 3vw, 16px)', color: '#888' }}>
                         {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                 </div>
+
+                {/* Quick Search */}
+                <QuickSearch />
+
+                {/* Market Overview */}
+                <MarketOverview />
+
+                {/* Watchlist Quick View */}
+                <WatchlistQuickView />
+
+                {/* Trending Stocks */}
+                <TrendingStocks />
+
+                {/* Recent Activity */}
+                <RecentActivity />
+
+                {/* Market News Feed */}
+                <NewsFeed />
 
                 {/* Quick Stats */}
                 <div style={{

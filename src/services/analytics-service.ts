@@ -13,7 +13,10 @@ export interface TechnicalIndicators {
     sma20?: number[];
     sma50?: number[];
     sma200?: number[];
+    ema9?: number[];
     ema12?: number[];
+    ema21?: number[];
+    ema200?: number[];
     rsi?: number[];
     macd?: {
         MACD: number[];
@@ -135,8 +138,17 @@ class AnalyticsService {
             }
 
             // EMA
+            if (closes.length >= 9) {
+                indicators.ema9 = EMA.calculate({ period: 9, values: closes });
+            }
             if (closes.length >= 12) {
                 indicators.ema12 = EMA.calculate({ period: 12, values: closes });
+            }
+            if (closes.length >= 21) {
+                indicators.ema21 = EMA.calculate({ period: 21, values: closes });
+            }
+            if (closes.length >= 200) {
+                indicators.ema200 = EMA.calculate({ period: 200, values: closes });
             }
 
             // RSI
