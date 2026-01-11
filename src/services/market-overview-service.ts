@@ -1,4 +1,5 @@
 // Market indices to track
+import { BASE_URL } from './api-client';
 export const MARKET_INDICES = {
     SPY: { name: 'S&P 500', symbol: 'SPY' },
     QQQ: { name: 'NASDAQ', symbol: 'QQQ' },
@@ -35,7 +36,7 @@ class MarketOverviewService {
         }
 
         try {
-            const url = `/api/yahoo/v8/finance/chart/${symbol}`;
+            const url = `${BASE_URL}/api/yahoo/v8/finance/chart/${symbol}`;
             const response = await fetch(url);
 
             if (!response.ok) {

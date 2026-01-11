@@ -7,6 +7,8 @@ const TRACKED_STOCKS = [
     'INTC', 'AMD', 'PYPL', 'QCOM', 'TXN', 'ORCL', 'IBM', 'SBUX',
 ];
 
+import { BASE_URL } from './api-client';
+
 export interface TrendingStock {
     symbol: string;
     name?: string;
@@ -39,7 +41,7 @@ class TrendingStocksService {
             // Fetch data for all tracked stocks
             const fetchPromises = TRACKED_STOCKS.map(async (symbol) => {
                 try {
-                    const url = `/api/yahoo/v8/finance/chart/${symbol}`;
+                    const url = `${BASE_URL}/api/yahoo/v8/finance/chart/${symbol}`;
                     const response = await fetch(url);
 
                     if (!response.ok) return null;

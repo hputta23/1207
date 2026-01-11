@@ -1,4 +1,5 @@
 import { SMA, EMA, RSI, MACD, BollingerBands } from 'technicalindicators';
+import { BASE_URL } from './api-client';
 
 export interface StockData {
     date: string;
@@ -62,7 +63,7 @@ class AnalyticsService {
 
         try {
             // Use local Python backend to avoid CORS issues
-            const response = await fetch('http://localhost:8000/history', {
+            const response = await fetch(`${BASE_URL}/history`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
