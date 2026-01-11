@@ -24,25 +24,18 @@ async def health_check():
 # Mount static files
 # Get absolute path to frontend directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
-# Point to dist folder in root (up two levels from stonks-daily-temp/backend)
-frontend_dir = os.path.join(current_dir, "../../dist")
+frontend_dir = os.path.join(current_dir, "../frontend")
 
 # Mount frontend directory at /static to serve assets
-# Check if dist exists (production) or fall back for local dev
-if os.path.exists(frontend_dir):
-    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dir, "assets")), name="assets")
-else:
-    # Fallback for local dev if needed, or just warn
-    print(f"Warning: Frontend build directory not found at {frontend_dir}")
-
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 @app.get("/manifest.json")
 async def get_manifest():
-    return FileResponse(os.path.join(frontend_dir, 'manifest.json'), media_type='application/json')
+    return FileResponse('frontend/manifest.json', media_type='application/json')
 
 @app.get("/sw.js")
 async def get_sw():
-    return FileResponse(os.path.join(frontend_dir, 'sw.js'), media_type='application/javascript')
+    return FileResponse('frontend/sw.js', media_type='application/javascript')
 
 # Enable CORS
 app.add_middleware(
