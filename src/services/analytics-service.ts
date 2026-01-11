@@ -62,51 +62,57 @@ class AnalyticsService {
         }
 
         try {
-            // Use local Python backend to avoid CORS issues
-            const response = await fetch(`${BASE_URL}/history`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    ticker: ticker,
-                    period: period,
-                    api_source: apiSource,
-                    api_key: apiKey
-                })
-            });
+            let result: StockData[];
 
-            if (!response.ok) {
-                throw new Error(`Failed to fetch data for ${ticker}`);
+            if (apiSource === 'mock') {
+                // Generate mock data locally without hitting backend
+                result = this.generateMockData(period, ticker);
+            } else {
+                // Use local Python backend to avoid CORS issues
+                const response = await fetch(`${BASE_URL}/history`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ticker: ticker,
+                        period: period,
+                        api_source: apiSource,
+                        api_key: apiKey
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch data for ${ticker}`);
+                }
+
+                const responseData = await response.json();
+                const rawResult = responseData.history;
+
+                if (!rawResult || rawResult.length === 0) {
+                    throw new Error(`No data available for ${ticker}`);
+                }
+
+                // Build historical data
+                result = rawResult.map((item: any) => ({
+                    date: item.date.split('T')[0],
+                    open: item.open,
+                    high: item.high,
+                    low: item.low,
+                    close: item.close,
+                    volume: item.volume,
+                }));
             }
-
-            const responseData = await response.json();
-            const result = responseData.history;
-
-            if (!result || result.length === 0) {
-                throw new Error(`No data available for ${ticker}`);
-            }
-
-            // Build historical data
-            const historical: StockData[] = result.map((item: any) => ({
-                date: item.date.split('T')[0],
-                open: item.open,
-                high: item.high,
-                low: item.low,
-                close: item.close,
-                volume: item.volume,
-            }));
 
             // Calculate technical indicators
-            const indicators = this.calculateTechnicalIndicators(historical);
-            // const indicators: TechnicalIndicators = {}; // Empty for now
+            const indicators = this.calculateTechnicalIndicators(result);
 
             // Calculate statistics
-            const statistics = this.calculateStatistics(historical, indicators);
+            const statistics = this.calculateStatistics(result, indicators);
 
             const analyticsData: AnalyticsData = {
                 ticker,
-                historical,
+                historical: result,
                 indicators,
                 statistics,
             };
@@ -119,6 +125,56 @@ class AnalyticsService {
             console.error(`Failed to fetch stock data for ${ticker}:`, error);
             throw error;
         }
+    }
+
+    private generateMockData(period: string, ticker: string): StockData[] {
+        const days = period === '1mo' ? 30 : period === '3mo' ? 90 : period === '6mo' ? 180 : period === '1y' ? 365 : 730;
+        const now = new Date();
+        const data: StockData[] = [];
+        let price = 150.0;
+        let trend = 0;
+
+        // Seed random based on ticker string for consistency
+        let seed = 0;
+        for (let i = 0; i < ticker.length; i++) {
+            seed += ticker.charCodeAt(i);
+        }
+
+        const random = () => {
+            const x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        };
+
+        for (let i = days; i >= 0; i--) {
+            const date = new Date(now);
+            date.setDate(date.getDate() - i);
+
+            // Random walk
+            const volatility = 0.02; // 2% daily volatility
+            const change = (random() - 0.5) * volatility;
+
+            // Add some trend
+            trend += (random() - 0.5) * 0.001;
+
+            const open = price;
+            const close = price * (1 + change + trend);
+            const high = Math.max(open, close) * (1 + random() * 0.01);
+            const low = Math.min(open, close) * (1 - random() * 0.01);
+            const volume = Math.floor(1000000 + random() * 5000000);
+
+            data.push({
+                date: date.toISOString().split('T')[0],
+                open,
+                high,
+                low,
+                close,
+                volume,
+            });
+
+            price = close;
+        }
+
+        return data;
     }
 
     calculateTechnicalIndicators(data: StockData[]): TechnicalIndicators {
