@@ -4,5 +4,5 @@ yfinance
 pandas
 requests
 feedparser
-
+scikit-learn
 numpy
