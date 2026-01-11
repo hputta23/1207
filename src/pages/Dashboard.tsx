@@ -67,17 +67,17 @@ export function Dashboard() {
     return (
         <div style={{
             width: '100%',
-            height: '100vh',
+            minHeight: '100vh',
             background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)',
             overflow: 'auto',
-            padding: '40px',
+            padding: 'clamp(16px, 5vw, 40px)',
         }}>
             {/* Welcome Section */}
             <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                <div style={{ marginBottom: '40px' }}>
+                <div style={{ marginBottom: 'clamp(24px, 5vw, 40px)' }}>
                     <h1 style={{
                         margin: '0 0 8px 0',
-                        fontSize: '36px',
+                        fontSize: 'clamp(24px, 6vw, 36px)',
                         fontWeight: 700,
                         background: 'linear-gradient(135deg, #fff 0%, #aaa 100%)',
                         WebkitBackgroundClip: 'text',
@@ -86,7 +86,7 @@ export function Dashboard() {
                     }}>
                         Welcome back, {user?.username || 'Trader'}
                     </h1>
-                    <p style={{ margin: 0, fontSize: '16px', color: '#888' }}>
+                    <p style={{ margin: 0, fontSize: 'clamp(13px, 3vw, 16px)', color: '#888' }}>
                         {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                 </div>

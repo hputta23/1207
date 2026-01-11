@@ -447,7 +447,7 @@ export function SimulationPanel({ ticker }: SimulationPanelProps) {
             )}
 
             {/* Charts Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '16px', marginBottom: '16px' }}>
                 {/* Main Simulation Chart */}
                 <div style={{
                     background: '#0a0a0a',
@@ -455,7 +455,7 @@ export function SimulationPanel({ ticker }: SimulationPanelProps) {
                     borderRadius: '8px',
                     overflow: 'hidden'
                 }}>
-                    <div ref={chartRef} style={{ width: '100%', height: '450px' }}>
+                    <div ref={chartRef} style={{ width: '100%', height: 'clamp(300px, 50vh, 450px)' }}>
                         {!data && !loading && (
                             <div style={{
                                 height: '100%',
@@ -502,7 +502,7 @@ export function SimulationPanel({ ticker }: SimulationPanelProps) {
                     borderRadius: '8px',
                     overflow: 'hidden'
                 }}>
-                    <div ref={histRef} style={{ width: '100%', height: '450px' }}>
+                    <div ref={histRef} style={{ width: '100%', height: 'clamp(300px, 50vh, 450px)' }}>
                         {!data && !loading && (
                             <div style={{
                                 height: '100%',

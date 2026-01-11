@@ -311,7 +311,7 @@ export function PredictionPanel({ ticker }: PredictionPanelProps) {
                 borderRadius: '8px',
                 overflow: 'hidden'
             }}>
-                <div ref={chartRef} style={{ width: '100%', height: '450px' }}>
+                <div ref={chartRef} style={{ width: '100%', height: 'clamp(300px, 50vh, 450px)' }}>
                     {!data && !loading && (
                         <div style={{
                             height: '100%',
