@@ -138,7 +138,7 @@ function AppContent() {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Top Navigation Bar */}
       <div style={{
         minHeight: '50px',
@@ -324,7 +324,7 @@ function AppContent() {
       </div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div style={{ flex: 1 }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/charts" element={<ChartsPage />} />
