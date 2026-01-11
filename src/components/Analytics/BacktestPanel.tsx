@@ -35,6 +35,11 @@ const STRATEGY_INFO: Record<string, { name: string; description: string; bestFor
         name: 'Triple EMA (9/21/55)',
         description: 'Buy when fast EMA > medium EMA > slow EMA, sell when reversed',
         bestFor: 'Multi-timeframe trend confirmation'
+    },
+    'BB_Squeeze': {
+        name: 'Bollinger Band Squeeze',
+        description: 'Buy on breakout after period of low volatility (squeeze)',
+        bestFor: 'Catching explosive moves after consolidation'
     }
 };
 
@@ -352,7 +357,9 @@ export function BacktestPanel({ ticker }: BacktestPanelProps) {
                             <option value="Macd_Strategy">MACD Signal</option>
                             <option value="BB_MeanReversion">Bollinger Band Mean Reversion</option>
                             <option value="GoldenCross">Golden/Death Cross (50/200)</option>
+                            <option value="GoldenCross">Golden/Death Cross (50/200)</option>
                             <option value="TripleEMA">Triple EMA (9/21/55)</option>
+                            <option value="BB_Squeeze">Bollinger Band Squeeze</option>
                         </select>
                     </div>
                 ) : (
