@@ -11,7 +11,21 @@ import traceback
 import os
 import datetime
 
+import httpx
+
 app = FastAPI()
+
+@app.get("/api/yahoo/v8/finance/chart/{symbol}")
+async def proxy_yahoo_chart(symbol: str, interval: str = "1d", range: str = "1mo"):
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval={interval}&range={range}"
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, headers=headers)
+        if resp.status_code != 200:
+             raise HTTPException(status_code=resp.status_code, detail="Yahoo API Error")
+        return resp.json()
 
 @app.get("/health")
 async def health_check():
