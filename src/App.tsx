@@ -68,8 +68,8 @@ function AppContent() {
           background: '#141414',
           border: '1px solid #2a2a2a',
           borderRadius: '16px',
-          padding: '32px 40px',
-          minWidth: '360px',
+          padding: 'clamp(24px, 5vw, 40px)',
+          width: 'clamp(280px, 90vw, 360px)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
         }}>
           <h2 style={{
@@ -141,13 +141,15 @@ function AppContent() {
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Top Navigation Bar */}
       <div style={{
-        height: '50px',
+        minHeight: '50px',
         background: '#111',
         borderBottom: '1px solid #222',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 20px',
+        padding: 'clamp(8px, 2vw, 20px)',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
       }}>
         {/* Left: Logo & Nav */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
@@ -181,7 +183,7 @@ function AppContent() {
           </div>
 
           {/* Navigation Links */}
-          <nav style={{ display: 'flex', gap: '8px' }}>
+          <nav style={{ display: 'flex', gap: 'clamp(4px, 1vw, 8px)', flexWrap: 'wrap' }}>
             <Link
               to="/"
               style={{
@@ -266,7 +268,7 @@ function AppContent() {
         </div>
 
         {/* Right: User Info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',

@@ -1,0 +1,157 @@
+/* Mobile Responsive Styles */
+
+/* Base responsive utilities */
+@media (max-width: 768px) {
+  /* Hide scrollbars on mobile for cleaner look */
+  * {
+    scrollbar-width: thin;
+  }
+
+  /* Ensure charts are touch-friendly */
+  .plotly .modebar {
+    display: none !important;
+  }
+
+  /* Make tables horizontally scrollable */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Stack cards on mobile */
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce padding on mobile */
+  .dashboard-container {
+    padding: 16px !important;
+  }
+
+  /* Make buttons full-width on mobile */
+  button {
+    min-height: 44px; /* iOS touch target size */
+  }
+
+  /* Adjust chart heights for mobile */
+  [style*="height: 800px"],
+  [style*="height: 600px"],
+  [style*="height: 400px"] {
+    height: clamp(300px, 50vh, 500px) !important;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  /* Even smaller padding */
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 24px !important;
+  }
+
+  h2 {
+    font-size: 20px !important;
+  }
+
+  h3 {
+    font-size: 16px !important;
+  }
+
+  /* Make inputs full-width */
+  input, select, textarea {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Reduce chart margins */
+  .plotly-graph-div {
+    margin: 0 !important;
+  }
+}
+
+/* Tablet and above */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* 2 columns for tablets */
+  [style*="grid-template-columns: repeat(auto-fit"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase touch targets */
+  button, a, input, select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Remove hover effects on touch devices */
+  button:hover,
+  a:hover {
+    transform: none !important;
+  }
+
+  /* Better spacing for touch */
+  button {
+    padding: 12px 16px !important;
+  }
+}
+
+/* Landscape mode on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Reduce vertical spacing */
+  [style*="marginBottom"] {
+    margin-bottom: 16px !important;
+  }
+
+  /* Make charts smaller in landscape */
+  [style*="height:"] {
+    max-height: 40vh !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  /* Hide navigation and non-essential elements */
+  nav, button, .no-print {
+    display: none !important;
+  }
+
+  /* Expand charts for print */
+  .plotly-graph-div {
+    page-break-inside: avoid;
+  }
+}
+
+/* Dark mode improvements for mobile */
+@media (prefers-color-scheme: dark) {
+  /* Already dark, but ensure good contrast */
+  body {
+    background: #0a0a0a;
+    color: #ffffff;
+  }
+}
+
+/* Accessibility - Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  button {
+    border-width: 2px !important;
+  }
+
+  input, select {
+    border-width: 2px !important;
+  }
+}
