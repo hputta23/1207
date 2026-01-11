@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { analyticsService } from '../services/analytics-service';
 import type { AnalyticsData } from '../services/analytics-service';
 import { AnalyticsCard } from '../components/Analytics/AnalyticsCard';
@@ -8,6 +9,7 @@ import { SimulationPanel } from '../components/Analytics/SimulationPanel';
 import { BacktestPanel } from '../components/Analytics/BacktestPanel';
 import { useDataSourceStore } from '../services/data-source-config';
 import { DataSourceSelector } from '../components/DataSourceSelector/DataSourceSelector';
+import { activityService } from '../services/activity-service';
 
 // Tab button component
 const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
@@ -30,6 +32,7 @@ const TabButton = ({ active, onClick, children }: { active: boolean; onClick: ()
 );
 
 export function AnalyticsTab() {
+    const [searchParams] = useSearchParams();
     const [ticker, setTicker] = useState('AAPL'); // Default to AAPL
     const [period, setPeriod] = useState('6mo');
     const [loading, setLoading] = useState(false);
@@ -39,10 +42,19 @@ export function AnalyticsTab() {
 
     const { selectedSource, sources } = useDataSourceStore();
 
-    // Load default data on mount
+    // Handle URL parameter for symbol
     useEffect(() => {
-        fetchData('AAPL');
-    }, []);
+        const symbol = searchParams.get('symbol');
+        if (symbol) {
+            const upperSymbol = symbol.toUpperCase();
+            setTicker(upperSymbol);
+            fetchData(upperSymbol);
+            activityService.addActivity('run_analysis', upperSymbol);
+        } else {
+            // Load default data on mount if no URL param
+            fetchData('AAPL');
+        }
+    }, [searchParams]);
 
     // Refetch when data source changes
     useEffect(() => {
@@ -78,6 +90,7 @@ export function AnalyticsTab() {
             setError('Please enter a ticker symbol');
             return;
         }
+        activityService.addActivity('run_analysis', ticker.toUpperCase());
         fetchData(ticker);
     };
 

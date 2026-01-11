@@ -73,6 +73,48 @@ export function PriceChart({ data, indicators, ticker }: PriceChartProps) {
             });
         }
 
+        // EMA 9
+        if (indicators.ema9 && indicators.ema9.length > 0) {
+            const offset = data.length - indicators.ema9.length;
+            traces.push({
+                x: dates.slice(offset),
+                y: indicators.ema9,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'EMA 9',
+                line: { color: '#06b6d4', width: 1.5, dash: 'dot' },
+                yaxis: 'y',
+            });
+        }
+
+        // EMA 21
+        if (indicators.ema21 && indicators.ema21.length > 0) {
+            const offset = data.length - indicators.ema21.length;
+            traces.push({
+                x: dates.slice(offset),
+                y: indicators.ema21,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'EMA 21',
+                line: { color: '#3b82f6', width: 1.5, dash: 'dot' },
+                yaxis: 'y',
+            });
+        }
+
+        // EMA 200
+        if (indicators.ema200 && indicators.ema200.length > 0) {
+            const offset = data.length - indicators.ema200.length;
+            traces.push({
+                x: dates.slice(offset),
+                y: indicators.ema200,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'EMA 200',
+                line: { color: '#6366f1', width: 2, dash: 'dot' },
+                yaxis: 'y',
+            });
+        }
+
         // Bollinger Bands
         if (indicators.bollingerBands) {
             const offset = data.length - indicators.bollingerBands.upper.length;
@@ -120,6 +162,66 @@ export function PriceChart({ data, indicators, ticker }: PriceChartProps) {
                 line: { color: '#a855f7', width: 1.5 },
                 yaxis: 'y3',
             });
+            // Add RSI overbought/oversold lines
+            traces.push({
+                x: dates.slice(offset),
+                y: Array(indicators.rsi.length).fill(70),
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Overbought',
+                line: { color: '#ef4444', width: 0.5, dash: 'dash' },
+                yaxis: 'y3',
+                showlegend: false,
+            });
+            traces.push({
+                x: dates.slice(offset),
+                y: Array(indicators.rsi.length).fill(30),
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Oversold',
+                line: { color: '#10b981', width: 0.5, dash: 'dash' },
+                yaxis: 'y3',
+                showlegend: false,
+            });
+        }
+
+        // MACD
+        if (indicators.macd && indicators.macd.MACD.length > 0) {
+            const offset = data.length - indicators.macd.MACD.length;
+
+            // MACD Histogram
+            traces.push({
+                x: dates.slice(offset),
+                y: indicators.macd.histogram,
+                type: 'bar',
+                name: 'MACD Histogram',
+                marker: {
+                    color: indicators.macd.histogram.map(val => val >= 0 ? '#10b981' : '#ef4444'),
+                },
+                yaxis: 'y4',
+            });
+
+            // MACD Line
+            traces.push({
+                x: dates.slice(offset),
+                y: indicators.macd.MACD,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'MACD',
+                line: { color: '#3b82f6', width: 1.5 },
+                yaxis: 'y4',
+            });
+
+            // Signal Line
+            traces.push({
+                x: dates.slice(offset),
+                y: indicators.macd.signal,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Signal',
+                line: { color: '#f59e0b', width: 1.5 },
+                yaxis: 'y4',
+            });
         }
 
         const layout: any = {
@@ -146,18 +248,23 @@ export function PriceChart({ data, indicators, ticker }: PriceChartProps) {
             yaxis: {
                 title: 'Price ($)',
                 gridcolor: '#1a1a1a',
-                domain: [0.35, 1],
+                domain: [0.50, 1],
             },
             yaxis2: {
                 title: 'Volume',
                 gridcolor: '#1a1a1a',
-                domain: [0.2, 0.33],
+                domain: [0.38, 0.48],
             },
             yaxis3: {
                 title: 'RSI',
                 gridcolor: '#1a1a1a',
-                domain: [0, 0.18],
+                domain: [0.19, 0.36],
                 range: [0, 100],
+            },
+            yaxis4: {
+                title: 'MACD',
+                gridcolor: '#1a1a1a',
+                domain: [0, 0.17],
             },
             margin: { l: 60, r: 20, t: 60, b: 40 },
             autosize: true,
@@ -184,7 +291,7 @@ export function PriceChart({ data, indicators, ticker }: PriceChartProps) {
             ref={chartRef}
             style={{
                 width: '100%',
-                height: '600px',
+                height: '800px',
                 background: '#0a0a0a',
                 borderRadius: '12px',
                 border: '1px solid rgba(255, 255, 255, 0.1)',

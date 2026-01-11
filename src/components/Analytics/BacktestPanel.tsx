@@ -183,24 +183,132 @@ export function BacktestPanel({ ticker }: BacktestPanelProps) {
             </div>
 
             {data && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginTop: '10px' }}>
-                    <div style={{ background: '#222', padding: '10px', borderRadius: '4px' }}>
-                        <div style={{ fontSize: '12px', color: '#888' }}>Total Return</div>
-                        <div style={{ fontSize: '18px', color: (data.total_return > 0) ? '#10b981' : '#ef4444' }}>{data.total_return?.toFixed(2)}%</div>
+                <>
+                    {/* Performance Metrics Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginTop: '16px' }}>
+                        <div style={{ background: '#222', padding: '12px', borderRadius: '8px', border: '1px solid #333' }}>
+                            <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Return</div>
+                            <div style={{ fontSize: '20px', fontWeight: 700, color: (data.total_return > 0) ? '#10b981' : '#ef4444' }}>
+                                {data.total_return >= 0 ? '+' : ''}{data.total_return?.toFixed(2)}%
+                            </div>
+                        </div>
+                        <div style={{ background: '#222', padding: '12px', borderRadius: '8px', border: '1px solid #333' }}>
+                            <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Final Value</div>
+                            <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff' }}>${data.final_value?.toLocaleString()}</div>
+                            <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+                                from ${initialCapital.toLocaleString()}
+                            </div>
+                        </div>
+                        <div style={{ background: '#222', padding: '12px', borderRadius: '8px', border: '1px solid #333' }}>
+                            <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sharpe Ratio</div>
+                            <div style={{ fontSize: '20px', fontWeight: 700, color: data.sharpe_ratio > 1 ? '#10b981' : data.sharpe_ratio > 0 ? '#f59e0b' : '#ef4444' }}>
+                                {data.sharpe_ratio?.toFixed(2)}
+                            </div>
+                        </div>
+                        <div style={{ background: '#222', padding: '12px', borderRadius: '8px', border: '1px solid #333' }}>
+                            <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Max Drawdown</div>
+                            <div style={{ fontSize: '20px', fontWeight: 700, color: '#ef4444' }}>{data.max_drawdown?.toFixed(2)}%</div>
+                        </div>
+
+                        {/* Additional Metrics */}
+                        {data.total_trades !== undefined && (
+                            <div style={{ background: '#222', padding: '12px', borderRadius: '8px', border: '1px solid #333' }}>
+                                <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Trades</div>
+                                <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff' }}>{data.total_trades}</div>
+                            </div>
+                        )}
+                        {data.win_rate !== undefined && (
+                            <div style={{ background: '#222', padding: '12px', borderRadius: '8px', border: '1px solid #333' }}>
+                                <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win Rate</div>
+                                <div style={{ fontSize: '20px', fontWeight: 700, color: data.win_rate >= 50 ? '#10b981' : '#f59e0b' }}>
+                                    {data.win_rate?.toFixed(1)}%
+                                </div>
+                            </div>
+                        )}
+                        {data.profit_factor !== undefined && (
+                            <div style={{ background: '#222', padding: '12px', borderRadius: '8px', border: '1px solid #333' }}>
+                                <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Profit Factor</div>
+                                <div style={{ fontSize: '20px', fontWeight: 700, color: data.profit_factor >= 1.5 ? '#10b981' : data.profit_factor >= 1 ? '#f59e0b' : '#ef4444' }}>
+                                    {data.profit_factor?.toFixed(2)}
+                                </div>
+                            </div>
+                        )}
+                        {data.avg_win !== undefined && (
+                            <div style={{ background: '#222', padding: '12px', borderRadius: '8px', border: '1px solid #333' }}>
+                                <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Avg Win / Loss</div>
+                                <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>
+                                    <span style={{ color: '#10b981' }}>${data.avg_win?.toFixed(0)}</span>
+                                    {' / '}
+                                    <span style={{ color: '#ef4444' }}>${Math.abs(data.avg_loss || 0)?.toFixed(0)}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <div style={{ background: '#222', padding: '10px', borderRadius: '4px' }}>
-                        <div style={{ fontSize: '12px', color: '#888' }}>Final Value</div>
-                        <div style={{ fontSize: '18px', color: '#fff' }}>${data.final_value?.toLocaleString()}</div>
-                    </div>
-                    <div style={{ background: '#222', padding: '10px', borderRadius: '4px' }}>
-                        <div style={{ fontSize: '12px', color: '#888' }}>Sharpe Ratio</div>
-                        <div style={{ fontSize: '18px', color: '#fff' }}>{data.sharpe_ratio?.toFixed(2)}</div>
-                    </div>
-                    <div style={{ background: '#222', padding: '10px', borderRadius: '4px' }}>
-                        <div style={{ fontSize: '12px', color: '#888' }}>Max Drawdown</div>
-                        <div style={{ fontSize: '18px', color: '#ef4444' }}>{data.max_drawdown?.toFixed(2)}%</div>
-                    </div>
-                </div>
+
+                    {/* Trades Table */}
+                    {data.trades && data.trades.length > 0 && (
+                        <div style={{ marginTop: '20px' }}>
+                            <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: 600, color: '#fff' }}>
+                                Trade History ({data.trades.length} trades)
+                            </h3>
+                            <div style={{
+                                maxHeight: '300px',
+                                overflowY: 'auto',
+                                background: '#111',
+                                border: '1px solid #333',
+                                borderRadius: '8px',
+                            }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                                    <thead style={{ position: 'sticky', top: 0, background: '#1a1a1a', zIndex: 1 }}>
+                                        <tr>
+                                            <th style={{ padding: '10px', textAlign: 'left', color: '#888', borderBottom: '1px solid #333' }}>#</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', color: '#888', borderBottom: '1px solid #333' }}>Type</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', color: '#888', borderBottom: '1px solid #333' }}>Entry Date</th>
+                                            <th style={{ padding: '10px', textAlign: 'right', color: '#888', borderBottom: '1px solid #333' }}>Entry Price</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', color: '#888', borderBottom: '1px solid #333' }}>Exit Date</th>
+                                            <th style={{ padding: '10px', textAlign: 'right', color: '#888', borderBottom: '1px solid #333' }}>Exit Price</th>
+                                            <th style={{ padding: '10px', textAlign: 'right', color: '#888', borderBottom: '1px solid #333' }}>P&L</th>
+                                            <th style={{ padding: '10px', textAlign: 'right', color: '#888', borderBottom: '1px solid #333' }}>Return %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.trades.map((trade: any, idx: number) => {
+                                            const pnl = trade.pnl || 0;
+                                            const isProfitable = pnl > 0;
+                                            return (
+                                                <tr key={idx} style={{ borderBottom: '1px solid #222' }}>
+                                                    <td style={{ padding: '8px', color: '#666' }}>{idx + 1}</td>
+                                                    <td style={{ padding: '8px' }}>
+                                                        <span style={{
+                                                            padding: '2px 6px',
+                                                            borderRadius: '3px',
+                                                            fontSize: '10px',
+                                                            fontWeight: 600,
+                                                            background: trade.type === 'LONG' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                            color: trade.type === 'LONG' ? '#10b981' : '#ef4444',
+                                                        }}>
+                                                            {trade.type}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '8px', color: '#aaa' }}>{trade.entry_date}</td>
+                                                    <td style={{ padding: '8px', color: '#aaa', textAlign: 'right' }}>${trade.entry_price?.toFixed(2)}</td>
+                                                    <td style={{ padding: '8px', color: '#aaa' }}>{trade.exit_date}</td>
+                                                    <td style={{ padding: '8px', color: '#aaa', textAlign: 'right' }}>${trade.exit_price?.toFixed(2)}</td>
+                                                    <td style={{ padding: '8px', color: isProfitable ? '#10b981' : '#ef4444', textAlign: 'right', fontWeight: 600 }}>
+                                                        {isProfitable ? '+' : ''}${pnl.toFixed(2)}
+                                                    </td>
+                                                    <td style={{ padding: '8px', color: isProfitable ? '#10b981' : '#ef4444', textAlign: 'right', fontWeight: 600 }}>
+                                                        {isProfitable ? '+' : ''}{trade.return_pct?.toFixed(2)}%
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
