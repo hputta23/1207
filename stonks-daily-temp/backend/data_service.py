@@ -32,19 +32,42 @@ def fetch_stock_data(ticker: str, period: str = "2y", api_source: str = "yahoo",
         if api_source == "polygon":
             return fetch_polygon_data(ticker, period, api_key)
 
-        # Default to Yahoo Finance (Direct API call via httpx to avoid yfinance library issues on Render)
-        
-        # Enforce minimum period of 6mo for models
-        fetch_period = period
-        if period in ["1mo", "2mo", "3mo"]:
-            fetch_period = "6mo"
+        # Default: Try Standard yfinance library first (handles cookies/crumbs automatically)
+        try:
+             # Enforce minimum period of 6mo for models if not specified otherwise
+            fetch_period = period
+            if period in ["1mo", "2mo", "3mo"]:
+                fetch_period = "6mo"
+                
+            print(f"DEBUG: Attempting yfinance for {ticker}, period={fetch_period}")
+            ticker_obj = yf.Ticker(ticker)
+            df = ticker_obj.history(period=fetch_period)
             
-        return fetch_with_httpx(ticker, fetch_period)
+            if df.empty:
+                raise ValueError(f"yfinance returned empty data for {ticker}")
+                
+            # Reset index to get Date column
+            df = df.reset_index()
+            
+            # Standardize columns
+            df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
+            
+            # Ensure Date is timezone naive
+            if df['Date'].dt.tz is not None:
+                df['Date'] = df['Date'].dt.tz_localize(None)
+                
+            print(f"DEBUG: Successfully fetched {len(df)} rows for {ticker} using yfinance")
+            return add_technical_indicators(df)
+            
+        except Exception as yf_error:
+            print(f"WARNING: yfinance library failed: {yf_error}. Falling back to direct httpx...")
+            # Fallback to direct httpx if library fails
+            return fetch_with_httpx(ticker, fetch_period)
 
     except Exception as e:
         print(f"Error in fetch_stock_data: {e}")
-        # import traceback
-        # traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         raise ValueError(f"Error fetching data for {ticker}: {str(e)}")
 
 def fetch_with_httpx(ticker: str, range: str):
