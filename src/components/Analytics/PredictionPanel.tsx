@@ -132,15 +132,15 @@ export function PredictionPanel({ ticker }: PredictionPanelProps) {
                     font: { color: '#fff', size: 16 }
                 },
                 paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(15,15,15,0.5)',
+                plot_bgcolor: '#0a0a0a',
                 font: { color: '#888', size: 11 },
                 xaxis: {
-                    gridcolor: '#2a2a2a',
+                    gridcolor: '#1a1a1a',
                     showgrid: true,
                     zeroline: false,
                 },
                 yaxis: {
-                    gridcolor: '#2a2a2a',
+                    gridcolor: '#1a1a1a',
                     title: { text: 'Price ($)', font: { size: 12 } },
                     showgrid: true,
                     zeroline: false,
@@ -150,7 +150,7 @@ export function PredictionPanel({ ticker }: PredictionPanelProps) {
                     orientation: 'h',
                     y: 1.15,
                     x: 0,
-                    font: { size: 11 },
+                    font: { color: '#9ca3af', size: 10 },
                     bgcolor: 'rgba(0,0,0,0)',
                 },
                 margin: { l: 60, r: 20, t: 80, b: 40 },

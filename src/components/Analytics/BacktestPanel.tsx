@@ -5,6 +5,39 @@ interface BacktestPanelProps {
     ticker: string;
 }
 
+const STRATEGY_INFO: Record<string, { name: string; description: string; bestFor: string }> = {
+    'SMA_Crossover': {
+        name: 'SMA Crossover (20/50)',
+        description: 'Buy when fast SMA (20) crosses above slow SMA (50), sell when it crosses below',
+        bestFor: 'Trending markets with clear momentum'
+    },
+    'RSI_Strategy': {
+        name: 'RSI Strategy (30/70)',
+        description: 'Buy when RSI drops below 30 (oversold), sell when RSI rises above 70 (overbought)',
+        bestFor: 'Range-bound, oscillating markets'
+    },
+    'Macd_Strategy': {
+        name: 'MACD Signal',
+        description: 'Buy when MACD line crosses above signal line, sell when it crosses below',
+        bestFor: 'Identifying trend changes and momentum shifts'
+    },
+    'BB_MeanReversion': {
+        name: 'Bollinger Band Mean Reversion',
+        description: 'Buy when price touches lower band, sell when price touches upper band',
+        bestFor: 'Mean-reverting stocks with stable volatility'
+    },
+    'GoldenCross': {
+        name: 'Golden/Death Cross (50/200)',
+        description: 'Buy on golden cross (50 SMA > 200 SMA), sell on death cross (50 SMA < 200 SMA)',
+        bestFor: 'Long-term trend following, reducing whipsaws'
+    },
+    'TripleEMA': {
+        name: 'Triple EMA (9/21/55)',
+        description: 'Buy when fast EMA > medium EMA > slow EMA, sell when reversed',
+        bestFor: 'Multi-timeframe trend confirmation'
+    }
+};
+
 export function BacktestPanel({ ticker }: BacktestPanelProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -14,7 +47,9 @@ export function BacktestPanel({ ticker }: BacktestPanelProps) {
     const [modelType, setModelType] = useState('random_forest');
     const [initialCapital, setInitialCapital] = useState(10000);
     const [commission, setCommission] = useState(0.1); // 0.1% default
+    const [showHelp, setShowHelp] = useState(false);
     const chartRef = useRef<HTMLDivElement>(null);
+    const drawdownChartRef = useRef<HTMLDivElement>(null);
     const [plotlyLoaded, setPlotlyLoaded] = useState(false);
 
     useEffect(() => {
@@ -56,131 +91,380 @@ export function BacktestPanel({ ticker }: BacktestPanelProps) {
             // @ts-ignore
             const PlotlyLib = window.Plotly;
 
-            // Both Technical and AI now return 'equity_curve' and 'dates' at top level
-            // (AI returns it inside results[0], but backend now normalizes response to have top level keys too or we handle it)
-            // Wait, backend AI response structure: { results: [...], dates: ..., equity_curve: ... } 
-
             const dates = data.dates || [];
             const equity = data.equity_curve || [];
+            const trades = data.trades || [];
 
             // Calculate Profit/Loss color
             const isProfit = equity.length > 0 && equity[equity.length - 1] >= initialCapital;
             const lineColor = isProfit ? '#10b981' : '#ef4444';
             const fillColor = isProfit ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
 
-            const traces = [
+            const traces: any[] = [
                 {
                     x: dates,
                     y: equity,
                     type: 'scatter',
                     mode: 'lines',
-                    name: 'Portfolio Value',
-                    line: { color: lineColor, width: 2 },
+                    name: 'Strategy',
+                    line: { color: lineColor, width: 2.5 },
                     fill: 'tozeroy',
                     fillcolor: fillColor
                 }
             ];
 
-            // Add 'Buy & Hold' benchmark if available or we can approximate it? 
-            // For now let's stick to the equity curve.
+            // Add Buy & Hold benchmark
+            if (data.buy_hold_curve) {
+                traces.push({
+                    x: dates,
+                    y: data.buy_hold_curve,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Buy & Hold',
+                    line: { color: '#6b7280', width: 1.5, dash: 'dot' }
+                });
+            }
 
-            const title = backtestMode === 'technical'
-                ? `Backtest: ${strategy} (Comm: ${commission}%)`
-                : `AI Backtest: ${modelType} (Comm: ${commission}%)`;
+            // Add trade markers
+            if (trades && trades.length > 0) {
+                const buyDates: string[] = [];
+                const buyPrices: number[] = [];
+                const sellDates: string[] = [];
+                const sellPrices: number[] = [];
+
+                trades.forEach((trade: any) => {
+                    const entryIdx = dates.indexOf(trade.entry_date);
+                    const exitIdx = dates.indexOf(trade.exit_date);
+                    if (entryIdx >= 0) {
+                        buyDates.push(trade.entry_date);
+                        buyPrices.push(equity[entryIdx]);
+                    }
+                    if (exitIdx >= 0) {
+                        sellDates.push(trade.exit_date);
+                        sellPrices.push(equity[exitIdx]);
+                    }
+                });
+
+                // Buy markers
+                if (buyDates.length > 0) {
+                    traces.push({
+                        x: buyDates,
+                        y: buyPrices,
+                        type: 'scatter',
+                        mode: 'markers',
+                        name: 'Buy',
+                        marker: {
+                            color: '#10b981',
+                            size: 10,
+                            symbol: 'triangle-up',
+                            line: { color: '#fff', width: 1 }
+                        }
+                    });
+                }
+
+                // Sell markers
+                if (sellDates.length > 0) {
+                    traces.push({
+                        x: sellDates,
+                        y: sellPrices,
+                        type: 'scatter',
+                        mode: 'markers',
+                        name: 'Sell',
+                        marker: {
+                            color: '#ef4444',
+                            size: 10,
+                            symbol: 'triangle-down',
+                            line: { color: '#fff', width: 1 }
+                        }
+                    });
+                }
+            }
+
+            const strategyName = backtestMode === 'technical'
+                ? STRATEGY_INFO[strategy]?.name || strategy
+                : modelType;
 
             const layout = {
-                title: { text: title, font: { color: '#fff' } },
+                title: {
+                    text: `${strategyName} Performance`,
+                    font: { color: '#fff', size: 16 }
+                },
                 paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                font: { color: '#888' },
-                xaxis: { gridcolor: '#333' },
-                yaxis: { gridcolor: '#333', title: 'Equity ($)' },
+                plot_bgcolor: '#0a0a0a',
+                font: { color: '#888', size: 11 },
+                xaxis: {
+                    gridcolor: '#1a1a1a',
+                    showgrid: true
+                },
+                yaxis: {
+                    gridcolor: '#1a1a1a',
+                    title: 'Portfolio Value ($)',
+                    showgrid: true
+                },
+                legend: {
+                    orientation: 'h',
+                    y: 1.1,
+                    x: 0,
+                    font: { color: '#9ca3af', size: 10 }
+                },
+                hovermode: 'x unified',
+                margin: { l: 60, r: 20, t: 50, b: 40 }
             };
 
             PlotlyLib.newPlot(chartRef.current, traces, layout, { responsive: true, displayModeBar: false });
         }
-    }, [data, plotlyLoaded, backtestMode, strategy, modelType, commission]);
+
+        // Drawdown chart
+        if (data && drawdownChartRef.current && plotlyLoaded) {
+            // @ts-ignore
+            const PlotlyLib = window.Plotly;
+
+            const dates = data.dates || [];
+            const equity = data.equity_curve || [];
+
+            // Calculate drawdown
+            const drawdown: number[] = [];
+            let peak = equity[0] || initialCapital;
+
+            equity.forEach((val: number) => {
+                if (val > peak) peak = val;
+                const dd = ((val - peak) / peak) * 100;
+                drawdown.push(dd);
+            });
+
+            const traces = [
+                {
+                    x: dates,
+                    y: drawdown,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Drawdown',
+                    line: { color: '#ef4444', width: 1.5 },
+                    fill: 'tozeroy',
+                    fillcolor: 'rgba(239, 68, 68, 0.2)'
+                }
+            ];
+
+            const layout = {
+                title: {
+                    text: 'Drawdown Analysis',
+                    font: { color: '#fff', size: 14 }
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: '#0a0a0a',
+                font: { color: '#888', size: 11 },
+                xaxis: {
+                    gridcolor: '#1a1a1a',
+                    showgrid: true
+                },
+                yaxis: {
+                    gridcolor: '#1a1a1a',
+                    title: 'Drawdown (%)',
+                    showgrid: true
+                },
+                showlegend: false,
+                hovermode: 'x unified',
+                margin: { l: 60, r: 20, t: 40, b: 40 }
+            };
+
+            PlotlyLib.newPlot(drawdownChartRef.current, traces, layout, { responsive: true, displayModeBar: false });
+        }
+    }, [data, plotlyLoaded, backtestMode, strategy, modelType, commission, initialCapital]);
 
     return (
         <div style={{ marginTop: '20px' }}>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <label style={{ color: '#bbb' }}>Type:</label>
-                <select
-                    value={backtestMode}
-                    onChange={(e) => setBacktestMode(e.target.value as 'technical' | 'ai')}
-                    style={{ padding: '8px', borderRadius: '4px', background: '#222', color: 'white', border: '1px solid #444' }}
+            {/* Header with Help Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#fff' }}>
+                    Strategy Configuration
+                </h3>
+                <button
+                    onClick={() => setShowHelp(!showHelp)}
+                    style={{
+                        padding: '6px 12px',
+                        background: 'rgba(59, 130, 246, 0.1)',
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                        borderRadius: '6px',
+                        color: '#3b82f6',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                    }}
                 >
-                    <option value="technical">Technical Strategy</option>
-                    <option value="ai">AI Model Trading</option>
-                </select>
+                    <span>ℹ️</span> {showHelp ? 'Hide' : 'Show'} Guide
+                </button>
+            </div>
+
+            {/* Help Panel */}
+            {showHelp && (
+                <div style={{
+                    background: 'rgba(59, 130, 246, 0.05)',
+                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    marginBottom: '20px'
+                }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 600, color: '#3b82f6' }}>
+                        📚 How to Use Backtesting
+                    </h4>
+                    <ol style={{ margin: '0 0 0 20px', padding: 0, fontSize: '13px', color: '#aaa', lineHeight: 1.8 }}>
+                        <li>Select a <strong>strategy type</strong> (Technical or AI Model)</li>
+                        <li>Choose a specific <strong>strategy or model</strong> from the dropdown</li>
+                        <li>Set your <strong>initial capital</strong> and <strong>commission rate</strong></li>
+                        <li>Click <strong>"Run Backtest"</strong> to test the strategy on historical data</li>
+                        <li>Review the <strong>equity curve</strong>, <strong>drawdown</strong>, and <strong>performance metrics</strong></li>
+                        <li>Analyze individual <strong>trades</strong> in the history table</li>
+                    </ol>
+                    <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '6px' }}>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#fbbf24' }}>
+                            ⚠️ <strong>Warning:</strong> Past performance does not guarantee future results. Backtest results may be subject to overfitting and look-ahead bias.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Controls */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                <div>
+                    <label style={{ display: 'block', color: '#888', fontSize: '12px', marginBottom: '6px' }}>Strategy Type</label>
+                    <select
+                        value={backtestMode}
+                        onChange={(e) => setBacktestMode(e.target.value as 'technical' | 'ai')}
+                        style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1a1a1a', color: 'white', border: '1px solid #333', fontSize: '13px' }}
+                    >
+                        <option value="technical">📊 Technical Strategy</option>
+                        <option value="ai">🤖 AI Model Trading</option>
+                    </select>
+                </div>
 
                 {backtestMode === 'technical' ? (
-                    <>
-                        <label style={{ color: '#bbb' }}>Strategy:</label>
+                    <div>
+                        <label style={{ display: 'block', color: '#888', fontSize: '12px', marginBottom: '6px' }}>Strategy</label>
                         <select
                             value={strategy}
                             onChange={(e) => setStrategy(e.target.value)}
-                            style={{ padding: '8px', borderRadius: '4px', background: '#222', color: 'white', border: '1px solid #444' }}
+                            style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1a1a1a', color: 'white', border: '1px solid #333', fontSize: '13px' }}
                         >
                             <option value="SMA_Crossover">SMA Crossover (20/50)</option>
                             <option value="RSI_Strategy">RSI Strategy (30/70)</option>
                             <option value="Macd_Strategy">MACD Signal</option>
+                            <option value="BB_MeanReversion">Bollinger Band Mean Reversion</option>
+                            <option value="GoldenCross">Golden/Death Cross (50/200)</option>
+                            <option value="TripleEMA">Triple EMA (9/21/55)</option>
                         </select>
-                    </>
+                    </div>
                 ) : (
-                    <>
-                        <label style={{ color: '#bbb' }}>Model:</label>
+                    <div>
+                        <label style={{ display: 'block', color: '#888', fontSize: '12px', marginBottom: '6px' }}>AI Model</label>
                         <select
                             value={modelType}
                             onChange={(e) => setModelType(e.target.value)}
-                            style={{ padding: '8px', borderRadius: '4px', background: '#222', color: 'white', border: '1px solid #444' }}
+                            style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1a1a1a', color: 'white', border: '1px solid #333', fontSize: '13px' }}
                         >
                             <option value="random_forest">Random Forest</option>
                             <option value="gradient_boosting">Gradient Boosting</option>
-                            <option value="svr">SVR</option>
-                            <option value="lstm">LSTM</option>
+                            <option value="svr">Support Vector Regression</option>
+                            <option value="lstm">LSTM Neural Network</option>
                         </select>
-                    </>
+                    </div>
                 )}
 
-                <label style={{ color: '#bbb' }}>Capital:</label>
-                <input
-                    type="number"
-                    value={initialCapital}
-                    onChange={(e) => setInitialCapital(Number(e.target.value))}
-                    style={{ width: '80px', padding: '8px', borderRadius: '4px', background: '#222', color: 'white', border: '1px solid #444' }}
-                />
+                <div>
+                    <label style={{ display: 'block', color: '#888', fontSize: '12px', marginBottom: '6px' }}>Initial Capital</label>
+                    <input
+                        type="number"
+                        value={initialCapital}
+                        onChange={(e) => setInitialCapital(Number(e.target.value))}
+                        style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1a1a1a', color: 'white', border: '1px solid #333', fontSize: '13px' }}
+                    />
+                </div>
 
-                <label style={{ color: '#bbb' }}>Comm(%):</label>
-                <input
-                    type="number"
-                    step="0.1"
-                    value={commission}
-                    onChange={(e) => setCommission(Number(e.target.value))}
-                    style={{ width: '60px', padding: '8px', borderRadius: '4px', background: '#222', color: 'white', border: '1px solid #444' }}
-                />
-
-                <button
-                    onClick={handleBacktest}
-                    disabled={loading}
-                    style={{
-                        padding: '8px 16px',
-                        background: loading ? '#555' : '#f59e0b',
-                        border: 'none',
-                        borderRadius: '4px',
-                        color: 'white',
-                        cursor: loading ? 'not-allowed' : 'pointer'
-                    }}
-                >
-                    {loading ? 'Testing...' : 'Run Backtest'}
-                </button>
+                <div>
+                    <label style={{ display: 'block', color: '#888', fontSize: '12px', marginBottom: '6px' }}>Commission (%)</label>
+                    <input
+                        type="number"
+                        step="0.1"
+                        value={commission}
+                        onChange={(e) => setCommission(Number(e.target.value))}
+                        style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1a1a1a', color: 'white', border: '1px solid #333', fontSize: '13px' }}
+                    />
+                </div>
             </div>
 
-            {error && <div style={{ color: '#ef4444', marginBottom: '10px' }}>{error}</div>}
+            {/* Strategy Description */}
+            {backtestMode === 'technical' && STRATEGY_INFO[strategy] && (
+                <div style={{
+                    background: 'rgba(16, 185, 129, 0.05)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    marginBottom: '16px'
+                }}>
+                    <div style={{ fontSize: '13px', color: '#10b981', fontWeight: 600, marginBottom: '4px' }}>
+                        ✓ {STRATEGY_INFO[strategy].name}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '6px' }}>
+                        {STRATEGY_INFO[strategy].description}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#666' }}>
+                        <strong>Best for:</strong> {STRATEGY_INFO[strategy].bestFor}
+                    </div>
+                </div>
+            )}
 
-            <div ref={chartRef} style={{ width: '100%', height: '400px', background: '#111', borderRadius: '8px' }}>
-                {!data && !loading && <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555' }}>Run backtest to view performance</div>}
+            {/* Run Button */}
+            <button
+                onClick={handleBacktest}
+                disabled={loading}
+                style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: loading ? '#555' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    marginBottom: '20px',
+                    transition: 'transform 0.15s'
+                }}
+                onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = 'translateY(-1px)')}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+            >
+                {loading ? '⏳ Running Backtest...' : '🚀 Run Backtest'}
+            </button>
+
+            {error && (
+                <div style={{
+                    padding: '12px',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '8px',
+                    color: '#ef4444',
+                    marginBottom: '16px',
+                    fontSize: '13px'
+                }}>
+                    {error}
+                </div>
+            )}
+
+            {/* Equity Curve Chart */}
+            <div ref={chartRef} style={{ width: '100%', height: '400px', background: '#111', borderRadius: '8px', marginBottom: '16px', border: '1px solid #222' }}>
+                {!data && !loading && (
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#555' }}>
+                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>📈</div>
+                        <div style={{ fontSize: '14px' }}>Run backtest to view performance</div>
+                    </div>
+                )}
             </div>
+
+            {/* Drawdown Chart */}
+            {data && (
+                <div ref={drawdownChartRef} style={{ width: '100%', height: '250px', background: '#111', borderRadius: '8px', marginBottom: '16px', border: '1px solid #222' }} />
+            )}
 
             {data && (
                 <>

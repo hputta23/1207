@@ -142,16 +142,16 @@ export function SimulationPanel({ ticker }: SimulationPanelProps) {
                     font: { color: '#fff', size: 16 }
                 },
                 paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(15,15,15,0.5)',
+                plot_bgcolor: '#0a0a0a',
                 font: { color: '#888', size: 11 },
                 xaxis: {
-                    gridcolor: '#2a2a2a',
+                    gridcolor: '#1a1a1a',
                     title: { text: 'Days', font: { size: 12 } },
                     showgrid: true,
                     zeroline: false,
                 },
                 yaxis: {
-                    gridcolor: '#2a2a2a',
+                    gridcolor: '#1a1a1a',
                     title: { text: 'Price ($)', font: { size: 12 } },
                     showgrid: true,
                     zeroline: false,
@@ -159,9 +159,10 @@ export function SimulationPanel({ ticker }: SimulationPanelProps) {
                 legend: {
                     x: 0.02,
                     y: 0.98,
-                    bgcolor: 'rgba(0,0,0,0.5)',
+                    bgcolor: 'rgba(0,0,0,0.7)',
                     bordercolor: '#333',
                     borderwidth: 1,
+                    font: { color: '#9ca3af', size: 10 }
                 },
                 margin: { l: 60, r: 20, t: 80, b: 50 },
             };
@@ -198,15 +199,15 @@ export function SimulationPanel({ ticker }: SimulationPanelProps) {
                     font: { color: '#fff', size: 14 }
                 },
                 paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(15,15,15,0.5)',
+                plot_bgcolor: '#0a0a0a',
                 font: { color: '#888', size: 11 },
                 xaxis: {
-                    gridcolor: '#2a2a2a',
+                    gridcolor: '#1a1a1a',
                     title: { text: 'Final Price ($)', font: { size: 11 } },
                     showgrid: true,
                 },
                 yaxis: {
-                    gridcolor: '#2a2a2a',
+                    gridcolor: '#1a1a1a',
                     title: { text: 'Frequency', font: { size: 11 } },
                     showgrid: true,
                 },
