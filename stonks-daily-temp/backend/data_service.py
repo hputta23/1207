@@ -32,35 +32,90 @@ def fetch_stock_data(ticker: str, period: str = "2y", api_source: str = "yahoo",
         if api_source == "polygon":
             return fetch_polygon_data(ticker, period, api_key)
 
-        # Default to Yahoo Finance
-        stock = yf.Ticker(ticker)
+        # Default to Yahoo Finance (Direct API call via httpx to avoid yfinance library issues on Render)
         
-        # Enforce minimum period of 6mo for models (need 60 days look_back)
+        # Enforce minimum period of 6mo for models
         fetch_period = period
         if period in ["1mo", "2mo", "3mo"]:
             fetch_period = "6mo"
             
-        # Fetch history
-        hist = stock.history(period=fetch_period)
-        
-        if hist.empty:
-            raise ValueError(f"No data found for ticker {ticker}")
-            
-        # Reset index to get Date as a column
-        hist = hist.reset_index()
-        
-        # Keep relevant columns for visualization and modeling
-        data = hist[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
-        
-        # Ensure Date is timezone naive or consistent
-        data['Date'] = pd.to_datetime(data['Date']).dt.tz_localize(None)
-        
-        # Add Technical Indicators
-        data = add_technical_indicators(data)
-        
-        return data
+        return fetch_with_httpx(ticker, fetch_period)
+
     except Exception as e:
+        print(f"Error in fetch_stock_data: {e}")
+        # import traceback
+        # traceback.print_exc()
         raise ValueError(f"Error fetching data for {ticker}: {str(e)}")
+
+def fetch_with_httpx(ticker: str, range: str):
+    import httpx
+    # interval = "1d"
+    
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&range={range}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    with httpx.Client() as client:
+        response = client.get(url, headers=headers)
+        if response.status_code != 200:
+             raise ValueError(f"Yahoo API Error: {response.status_code}")
+        
+        data = response.json()
+        
+    result = data.get('chart', {}).get('result', [])
+    if not result:
+        raise ValueError(f"No data found for {ticker}")
+        
+    quote_data = result[0]
+    timestamps = quote_data.get('timestamp', [])
+    indicators = quote_data.get('indicators', {}).get('quote', [{}])[0]
+    
+    if not timestamps:
+         raise ValueError("Empty timestamp in data")
+         
+    opens = indicators.get('open', [])
+    highs = indicators.get('high', [])
+    lows = indicators.get('low', [])
+    closes = indicators.get('close', [])
+    volumes = indicators.get('volume', [])
+    
+    # Filter out Nones (sometimes yahoo returns nulls)
+    valid_data = []
+    
+    for i in range(len(timestamps)):
+        t = timestamps[i]
+        o = opens[i]
+        h = highs[i]
+        l = lows[i]
+        c = closes[i]
+        v = volumes[i]
+        
+        if o is None or c is None:
+            continue
+            
+        dt = datetime.fromtimestamp(t)
+        valid_data.append({
+            'Date': dt,
+            'Open': o,
+            'High': h,
+            'Low': l,
+            'Close': c,
+            'Volume': v
+        })
+        
+    df = pd.DataFrame(valid_data)
+    if df.empty:
+        raise ValueError("DataFrame is empty after parsing")
+        
+    # Standardize columns
+    df = df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
+    
+    # Ensure Date is timezone naive
+    df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
+    
+    return add_technical_indicators(df)
+
 
 def generate_mock_data(ticker, period):
     import numpy as np
