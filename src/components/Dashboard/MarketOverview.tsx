@@ -7,18 +7,24 @@ export function MarketOverview() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
+        const fetchData = async (isInitialLoad = false) => {
+            // Only show loading spinner on initial load, not on refreshes
+            if (isInitialLoad) {
+                setLoading(true);
+            }
             const data = await marketOverviewService.fetchAllIndices();
             setIndices(data);
             setMarketStatus(marketOverviewService.getMarketStatus());
-            setLoading(false);
+            if (isInitialLoad) {
+                setLoading(false);
+            }
         };
 
-        fetchData();
+        // Initial load with loading state
+        fetchData(true);
 
-        // Update every 5 seconds
-        const interval = setInterval(fetchData, 5000);
+        // Subsequent refreshes without loading state (silent updates)
+        const interval = setInterval(() => fetchData(false), 5000);
 
         return () => clearInterval(interval);
     }, []);
