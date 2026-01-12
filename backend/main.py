@@ -26,7 +26,13 @@ async def health_check():
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174", 
+        "https://1207-mu.vercel.app", 
+        "https://1207-git-main-hp23s-projects.vercel.app",
+        "https://stonks-daily-temp.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
