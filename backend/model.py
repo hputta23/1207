@@ -389,6 +389,8 @@ class EnsemblePredictor(BasePredictor):
 
 
 
+
+class RandomForestPredictor(BasePredictor):
     def train(self, data, epochs=None, batch_size=None):
         x_train, y_train, scaled_data = self.prepare_data_sklearn(data)
         # Use fixed hyperparameters to avoid timeout on Render
@@ -457,6 +459,8 @@ class EnsemblePredictor(BasePredictor):
         
         return future_dates, np.array(predicted_prices)
 
+
+class SVRPredictor(BasePredictor):
     def train(self, data, epochs=None, batch_size=None):
         x_train, y_train, scaled_data = self.prepare_data_sklearn(data)
         # Use fixed hyperparameters for speed
@@ -525,6 +529,8 @@ class EnsemblePredictor(BasePredictor):
         
         return future_dates, np.array(predicted_prices)
 
+
+class GradientBoostingPredictor(BasePredictor):
     def train(self, data, epochs=None, batch_size=None):
         x_train, y_train, scaled_data = self.prepare_data_sklearn(data)
         # Fixed hyperparameters for performance
