@@ -1,6 +1,7 @@
 import { DataNormalizer } from '../core/data/normalizer';
 import type { Candle } from '../core/renderer/types';
 import type { DataSourceType } from './data-source-config';
+import { BASE_URL } from './api-client';
 
 type DataListener = (data: Candle[]) => void;
 
@@ -108,7 +109,8 @@ export class DataService {
     }
 
     private async fetchFromYahoo(symbol: string, interval: string, range: string): Promise<any[]> {
-        const url = `/api/yahoo/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+        // Use backend proxy to avoid CORS
+        const url = `${BASE_URL}/api/yahoo/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -146,7 +148,7 @@ export class DataService {
     }
 
     private async fetchFromBackend(symbol: string, period: string): Promise<any[]> {
-        const response = await fetch('http://localhost:8000/history', {
+        const response = await fetch(`${BASE_URL}/history`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

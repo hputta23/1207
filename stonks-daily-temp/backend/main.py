@@ -11,7 +11,21 @@ import traceback
 import os
 import datetime
 
+import httpx
+
 app = FastAPI()
+
+@app.get("/api/yahoo/v8/finance/chart/{symbol}")
+async def proxy_yahoo_chart(symbol: str, interval: str = "1d", range: str = "1mo"):
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval={interval}&range={range}"
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, headers=headers)
+        if resp.status_code != 200:
+             raise HTTPException(status_code=resp.status_code, detail="Yahoo API Error")
+        return resp.json()
 
 @app.get("/health")
 async def health_check():
@@ -463,6 +477,33 @@ def run_strategy_backtest(request: PredictionRequest):
         # Buy MACD > Signal
         signals[df['MACD'] > df['Signal_Line']] = 1
         signals[df['MACD'] <= df['Signal_Line']] = 0
+
+    elif request.strategy == "BB_Squeeze":
+        # Bollinger Band Squeeze Strategy
+        # Logic: Buy when price breaks ABOVE Upper Band after a period of low volatility (Squeeze)
+        # Exit: When price reverts to mean (crosses below SMA 20)
+        
+        # 1. Calculate Band Width
+        # Avoid division by zero
+        df['Band_Width'] = (df['Upper_Band'] - df['Lower_Band']) / df['SMA_20'].replace(0, np.nan)
+        
+        # 2. Identify Squeeze (Band Width < 0.10, adjustable)
+        df['In_Squeeze'] = df['Band_Width'] < 0.10
+        
+        # 3. Was there a squeeze in the last 5 days?
+        df['Recent_Squeeze'] = df['In_Squeeze'].rolling(window=5).max() > 0
+        
+        curr_sig = 0
+        for i in range(len(df)):
+            # Entry: Close > Upper Band AND Recent Squeeze
+            if df['Recent_Squeeze'].iloc[i] and df['Close'].iloc[i] > df['Upper_Band'].iloc[i]:
+                curr_sig = 1
+            
+            # Exit: Close < SMA 20 (Mean Reversion)
+            elif curr_sig == 1 and df['Close'].iloc[i] < df['SMA_20'].iloc[i]:
+                curr_sig = 0
+                
+            signals.iloc[i] = curr_sig
         
     # Backtest Loop
     # Shift signals by 1 to enter on NEXT open

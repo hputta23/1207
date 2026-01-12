@@ -172,10 +172,14 @@ If you want the full backend functionality:
 **Railway (Recommended for Backend):**
 1. Visit: https://railway.app
 2. Create new project → Deploy from GitHub
-3. Add both services:
-   - Frontend (Node.js/Vite)
-   - Backend (Python/FastAPI on port 8000)
-4. Connect them via environment variables
+3. Select this repository (`1207`)
+4. Railway will auto-detect the `Procfile` and deploy.
+5. **Variables**:
+   - Go to "Variables" tab.
+   - Add `PORT` = `8000`
+   - Add `ALPHA_VANTAGE_KEY` = `your_key_here`
+6. Your backend will be live at `https://your-project.up.railway.app`.
+   - Update your frontend `BASE_URL` if needed (or verify cross-origin connection).
 
 **Render:**
 1. Visit: https://render.com

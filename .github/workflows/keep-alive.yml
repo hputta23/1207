@@ -12,7 +12,13 @@ jobs:
     steps:
       - name: Ping Backend
         run: |
-          URL="https://terminal-pro-api.onrender.com"
+          # Using hardcoded URL for simplicity
+          URL="https://stonks-daily-temp.onrender.com"
+          
+          # if [ -z "$URL" ]; then
+          #   echo "RENDER_BACKEND_URL secret is not set. Please set it in Settings -> Secrets."
+          #   exit 1
+          # fi
 
           echo "Pinging $URL/health..."
           response=$(curl -s -o /dev/null -w "%{http_code}" "$URL/health")

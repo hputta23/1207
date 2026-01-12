@@ -1,5 +1,5 @@
 // Use environment variable for production, fallback to localhost for development
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface PredictionRequest {
     ticker: string;

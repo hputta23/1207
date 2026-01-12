@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { watchlistService } from '../../services/watchlist-service';
 import { activityService } from '../../services/activity-service';
+import { BASE_URL } from '../../services/api-client';
 
 interface StockQuote {
     symbol: string;
@@ -41,7 +42,7 @@ export function WatchlistQuickView() {
 
             for (const symbol of watchlist) {
                 try {
-                    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+                    const url = `${BASE_URL}/api/yahoo/v8/finance/chart/${symbol}`;
                     const response = await fetch(url);
 
                     if (!response.ok) continue;

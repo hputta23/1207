@@ -330,7 +330,7 @@ function AppContent() {
       </div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div style={{ flex: 1 }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/charts" element={<ChartsPage />} />
