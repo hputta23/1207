@@ -41,7 +41,7 @@ export function WatchlistQuickView() {
 
             for (const symbol of watchlist) {
                 try {
-                    const url = `/api/yahoo/v8/finance/chart/${symbol}`;
+                    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
                     const response = await fetch(url);
 
                     if (!response.ok) continue;

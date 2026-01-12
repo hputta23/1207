@@ -8,6 +8,7 @@ import { WatchlistQuickView } from '../components/Dashboard/WatchlistQuickView';
 import { TrendingStocks } from '../components/Dashboard/TrendingStocks';
 import { RecentActivity } from '../components/Dashboard/RecentActivity';
 import { NewsFeed } from '../components/Dashboard/NewsFeed';
+import { AutoRefreshControl } from '../components/AutoRefresh/AutoRefreshControl';
 
 export function Dashboard() {
     const navigate = useNavigate();
@@ -74,21 +75,24 @@ export function Dashboard() {
         }}>
             {/* Welcome Section */}
             <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                <div style={{ marginBottom: 'clamp(24px, 5vw, 40px)' }}>
-                    <h1 style={{
-                        margin: '0 0 8px 0',
-                        fontSize: 'clamp(24px, 6vw, 36px)',
-                        fontWeight: 700,
-                        background: 'linear-gradient(135deg, #fff 0%, #aaa 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                    }}>
-                        Welcome back, {user?.username || 'Trader'}
-                    </h1>
-                    <p style={{ margin: 0, fontSize: 'clamp(13px, 3vw, 16px)', color: '#888' }}>
-                        {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
+                <div style={{ marginBottom: 'clamp(24px, 5vw, 40px)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                        <h1 style={{
+                            margin: '0 0 8px 0',
+                            fontSize: 'clamp(24px, 6vw, 36px)',
+                            fontWeight: 700,
+                            background: 'linear-gradient(135deg, #fff 0%, #aaa 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                        }}>
+                            Welcome back, {user?.username || 'Trader'}
+                        </h1>
+                        <p style={{ margin: 0, fontSize: 'clamp(13px, 3vw, 16px)', color: '#888' }}>
+                            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
+                    </div>
+                    <AutoRefreshControl />
                 </div>
 
                 {/* Quick Search */}
