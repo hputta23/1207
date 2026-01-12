@@ -389,21 +389,10 @@ class EnsemblePredictor(BasePredictor):
 
 
 
-class RandomForestPredictor(BasePredictor):
-    def tune_hyperparameters(self, x_train, y_train):
-        param_grid = {
-            'n_estimators': [50, 100, 200],
-            'max_depth': [None, 10, 20],
-            'min_samples_split': [2, 5, 10]
-        }
-        search = RandomizedSearchCV(RandomForestRegressor(random_state=42), param_grid, n_iter=5, cv=3, random_state=42, n_jobs=-1)
-        search.fit(x_train, y_train)
-        return search.best_estimator_
-
     def train(self, data, epochs=None, batch_size=None):
         x_train, y_train, scaled_data = self.prepare_data_sklearn(data)
-        # self.model = RandomForestRegressor(n_estimators=100, random_state=42)
-        self.model = self.tune_hyperparameters(x_train, y_train)
+        # Use fixed hyperparameters to avoid timeout on Render
+        self.model = RandomForestRegressor(n_estimators=100, max_depth=20, min_samples_split=5, random_state=42, n_jobs=-1)
         self.model.fit(x_train, y_train)
         class History:
             history = {'loss': [0]}
@@ -468,21 +457,10 @@ class RandomForestPredictor(BasePredictor):
         
         return future_dates, np.array(predicted_prices)
 
-class SVRPredictor(BasePredictor):
-    def tune_hyperparameters(self, x_train, y_train):
-        param_grid = {
-            'C': [0.1, 1, 10, 100],
-            'gamma': ['scale', 'auto', 0.01, 0.1, 1],
-            'epsilon': [0.01, 0.1, 0.2]
-        }
-        search = RandomizedSearchCV(SVR(kernel='rbf'), param_grid, n_iter=5, cv=3, random_state=42, n_jobs=-1)
-        search.fit(x_train, y_train)
-        return search.best_estimator_
-
     def train(self, data, epochs=None, batch_size=None):
         x_train, y_train, scaled_data = self.prepare_data_sklearn(data)
-        # self.model = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
-        self.model = self.tune_hyperparameters(x_train, y_train)
+        # Use fixed hyperparameters for speed
+        self.model = SVR(kernel='rbf', C=100, gamma='scale', epsilon=0.1)
         self.model.fit(x_train, y_train)
         class History:
             history = {'loss': [0]}
@@ -547,21 +525,10 @@ class SVRPredictor(BasePredictor):
         
         return future_dates, np.array(predicted_prices)
 
-class GradientBoostingPredictor(BasePredictor):
-    def tune_hyperparameters(self, x_train, y_train):
-        param_grid = {
-            'n_estimators': [50, 100, 200],
-            'learning_rate': [0.01, 0.1, 0.2],
-            'max_depth': [3, 5, 7]
-        }
-        search = RandomizedSearchCV(GradientBoostingRegressor(random_state=42), param_grid, n_iter=5, cv=3, random_state=42, n_jobs=-1)
-        search.fit(x_train, y_train)
-        return search.best_estimator_
-
     def train(self, data, epochs=None, batch_size=None):
         x_train, y_train, scaled_data = self.prepare_data_sklearn(data)
-        # self.model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
-        self.model = self.tune_hyperparameters(x_train, y_train)
+        # Fixed hyperparameters for performance
+        self.model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=5, random_state=42)
         self.model.fit(x_train, y_train)
         class History:
             history = {'loss': [0]}
