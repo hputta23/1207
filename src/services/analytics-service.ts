@@ -1,5 +1,8 @@
 import { SMA, EMA, RSI, MACD, BollingerBands } from 'technicalindicators';
 
+// Use environment variable for production, fallback to localhost for development
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 export interface StockData {
     date: string;
     open: number;
@@ -61,8 +64,8 @@ class AnalyticsService {
         }
 
         try {
-            // Use local Python backend to avoid CORS issues
-            const response = await fetch('http://localhost:8000/history', {
+            // Use backend API (local or deployed)
+            const response = await fetch(`${BASE_URL}/history`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

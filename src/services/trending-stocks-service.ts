@@ -1,10 +1,8 @@
-// Popular liquid stocks to track for trending analysis
+// Popular liquid stocks to track for trending analysis (reduced for performance)
 const TRACKED_STOCKS = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'BRK.B',
-    'UNH', 'JNJ', 'V', 'WMT', 'JPM', 'MA', 'PG', 'HD',
-    'CVX', 'LLY', 'ABBV', 'MRK', 'KO', 'PEP', 'COST', 'AVGO',
-    'TMO', 'NKE', 'DIS', 'CSCO', 'VZ', 'ADBE', 'NFLX', 'CRM',
-    'INTC', 'AMD', 'PYPL', 'QCOM', 'TXN', 'ORCL', 'IBM', 'SBUX',
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META',
+    'JPM', 'V', 'WMT', 'MA', 'HD', 'DIS', 'NFLX',
+    'AMD', 'PYPL', 'INTC', 'CSCO', 'ADBE', 'CRM',
 ];
 
 export interface TrendingStock {
@@ -39,7 +37,8 @@ class TrendingStocksService {
             // Fetch data for all tracked stocks
             const fetchPromises = TRACKED_STOCKS.map(async (symbol) => {
                 try {
-                    const url = `/api/yahoo/v8/finance/chart/${symbol}`;
+                    // Use Yahoo Finance public API endpoint
+                    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
                     const response = await fetch(url);
 
                     if (!response.ok) return null;
