@@ -22,7 +22,9 @@ def fetch_stock_data(ticker: str, period: str = "2y", api_source: str = "yahoo",
 
         # Alpha Vantage
         if api_source == "alpha_vantage":
-            return fetch_alpha_vantage_data(ticker, period, api_key)
+            # Fallback to environment variable if key not provided
+            key = api_key or os.environ.get("ALPHA_VANTAGE_KEY")
+            return fetch_alpha_vantage_data(ticker, period, key)
 
         # Finnhub
         if api_source == "finnhub":
