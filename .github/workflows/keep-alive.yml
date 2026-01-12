@@ -12,13 +12,13 @@ jobs:
     steps:
       - name: Ping Backend
         run: |
-          # Replace with your actual backend URL or use a Secret
-          URL="${{ secrets.RENDER_BACKEND_URL }}"
+          # Using hardcoded URL for simplicity
+          URL="https://stonks-daily-temp.onrender.com"
           
-          if [ -z "$URL" ]; then
-            echo "RENDER_BACKEND_URL secret is not set. Please set it in Settings -> Secrets."
-            exit 1
-          fi
+          # if [ -z "$URL" ]; then
+          #   echo "RENDER_BACKEND_URL secret is not set. Please set it in Settings -> Secrets."
+          #   exit 1
+          # fi
 
           echo "Pinging $URL..."
           curl -I "$URL/health" || curl -I "$URL"
