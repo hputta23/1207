@@ -12,13 +12,16 @@ jobs:
     steps:
       - name: Ping Backend
         run: |
-          # Replace with your actual backend URL or use a Secret
-          URL="${{ secrets.RENDER_BACKEND_URL }}"
-          
-          if [ -z "$URL" ]; then
-            echo "RENDER_BACKEND_URL secret is not set. Please set it in Settings -> Secrets."
-            exit 1
-          fi
+          URL="https://terminal-pro-api.onrender.com"
 
-          echo "Pinging $URL..."
-          curl -I "$URL/health" || curl -I "$URL"
+          echo "Pinging $URL/health..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" "$URL/health")
+
+          if [ "$response" -eq 200 ]; then
+            echo "✅ Backend is alive! Status: $response"
+          else
+            echo "⚠️ Backend responded with status: $response"
+            echo "Trying root endpoint..."
+            response2=$(curl -s -o /dev/null -w "%{http_code}" "$URL/")
+            echo "Root endpoint status: $response2"
+          fi
