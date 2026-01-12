@@ -1,0 +1,27 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Run every 14 minutes (Render sleeps after 15 minutes of inactivity)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Backend
+        run: |
+          URL="https://terminal-pro-api.onrender.com"
+
+          echo "Pinging $URL/health..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" "$URL/health")
+
+          if [ "$response" -eq 200 ]; then
+            echo "✅ Backend is alive! Status: $response"
+          else
+            echo "⚠️ Backend responded with status: $response"
+            echo "Trying root endpoint..."
+            response2=$(curl -s -o /dev/null -w "%{http_code}" "$URL/")
+            echo "Root endpoint status: $response2"
+          fi
