@@ -1,69 +1,88 @@
-export interface WatchlistTicker {
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+export interface WatchlistItem {
     symbol: string;
+    name: string;
     addedAt: number;
 }
 
+interface WatchlistState {
+    watchlist: WatchlistItem[];
+    addToWatchlist: (symbol: string, name?: string) => void;
+    removeFromWatchlist: (symbol: string) => void;
+    isInWatchlist: (symbol: string) => boolean;
+    clearWatchlist: () => void;
+}
+
+export const useWatchlistStore = create<WatchlistState>()(
+    persist(
+        (set, get) => ({
+            watchlist: [],
+
+            addToWatchlist: (symbol: string, name?: string) => {
+                const { watchlist, isInWatchlist } = get();
+
+                if (!isInWatchlist(symbol)) {
+                    set({
+                        watchlist: [
+                            ...watchlist,
+                            {
+                                symbol: symbol.toUpperCase(),
+                                name: name || symbol.toUpperCase(),
+                                addedAt: Date.now(),
+                            },
+                        ],
+                    });
+                }
+            },
+
+            removeFromWatchlist: (symbol: string) => {
+                const { watchlist } = get();
+                set({
+                    watchlist: watchlist.filter(
+                        (item) => item.symbol !== symbol.toUpperCase()
+                    ),
+                });
+            },
+
+            isInWatchlist: (symbol: string) => {
+                const { watchlist } = get();
+                return watchlist.some(
+                    (item) => item.symbol === symbol.toUpperCase()
+                );
+            },
+
+            clearWatchlist: () => {
+                set({ watchlist: [] });
+            },
+        }),
+        {
+            name: 'terminal-pro-watchlist',
+        }
+    )
+);
+
+// Legacy class-based service for backwards compatibility
 class WatchlistService {
-    private storageKey = 'terminal_pro_watchlist';
-    private tickers: Set<string>;
-
-    constructor() {
-        this.tickers = new Set(this.loadFromStorage());
+    addTicker(ticker: string): void {
+        useWatchlistStore.getState().addToWatchlist(ticker);
     }
 
-    private loadFromStorage(): string[] {
-        try {
-            const stored = localStorage.getItem(this.storageKey);
-            return stored ? JSON.parse(stored) : [];
-        } catch (error) {
-            console.error('Failed to load watchlist from storage:', error);
-            return [];
-        }
-    }
-
-    private saveToStorage(): void {
-        try {
-            const tickers = Array.from(this.tickers);
-            localStorage.setItem(this.storageKey, JSON.stringify(tickers));
-        } catch (error) {
-            console.error('Failed to save watchlist to storage:', error);
-        }
-    }
-
-    addTicker(ticker: string): boolean {
-        const normalized = ticker.trim().toUpperCase();
-        if (!normalized || this.tickers.has(normalized)) {
-            return false;
-        }
-        this.tickers.add(normalized);
-        this.saveToStorage();
-        return true;
-    }
-
-    removeTicker(ticker: string): boolean {
-        const normalized = ticker.trim().toUpperCase();
-        const removed = this.tickers.delete(normalized);
-        if (removed) {
-            this.saveToStorage();
-        }
-        return removed;
+    removeTicker(ticker: string): void {
+        useWatchlistStore.getState().removeFromWatchlist(ticker);
     }
 
     getTickers(): string[] {
-        return Array.from(this.tickers).sort();
+        return useWatchlistStore.getState().watchlist.map(item => item.symbol);
     }
 
     hasTicker(ticker: string): boolean {
-        return this.tickers.has(ticker.trim().toUpperCase());
+        return useWatchlistStore.getState().isInWatchlist(ticker);
     }
 
-    getCount(): number {
-        return this.tickers.size;
-    }
-
-    clearWatchlist(): void {
-        this.tickers.clear();
-        this.saveToStorage();
+    clearAll(): void {
+        useWatchlistStore.getState().clearWatchlist();
     }
 }
 

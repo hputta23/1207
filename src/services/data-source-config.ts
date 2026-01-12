@@ -22,10 +22,16 @@ export interface DataSourceState {
     enableSource: (source: DataSourceType, enabled: boolean) => void;
 }
 
+// Get API keys from environment variables
+const alphaVantageKey = import.meta.env.VITE_ALPHA_VANTAGE_KEY || '';
+const finnhubKey = import.meta.env.VITE_FINNHUB_KEY || '';
+const polygonKey = import.meta.env.VITE_POLYGON_KEY || '';
+
 export const useDataSourceStore = create<DataSourceState>()(
     persist(
         (set) => ({
-            selectedSource: 'yahoo',
+            // Default to Alpha Vantage if API key is available, otherwise Yahoo
+            selectedSource: alphaVantageKey ? 'alpha_vantage' : 'yahoo',
             sources: {
                 yahoo: {
                     type: 'yahoo',
@@ -33,18 +39,18 @@ export const useDataSourceStore = create<DataSourceState>()(
                 },
                 alpha_vantage: {
                     type: 'alpha_vantage',
-                    apiKey: '',
-                    enabled: false,
+                    apiKey: alphaVantageKey,
+                    enabled: alphaVantageKey.length > 0,
                 },
                 finnhub: {
                     type: 'finnhub',
-                    apiKey: '',
-                    enabled: false,
+                    apiKey: finnhubKey,
+                    enabled: finnhubKey.length > 0,
                 },
                 polygon: {
                     type: 'polygon',
-                    apiKey: '',
-                    enabled: false,
+                    apiKey: polygonKey,
+                    enabled: polygonKey.length > 0,
                 },
                 mock: {
                     type: 'mock',

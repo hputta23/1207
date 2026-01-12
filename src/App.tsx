@@ -5,12 +5,17 @@ import { ChartsPage } from './pages/ChartsPage';
 import { NewsTab } from './pages/NewsTab';
 import { WatchlistTab } from './pages/WatchlistTab';
 import { AnalyticsTab } from './pages/AnalyticsTab';
+import { ThemeToggle } from './components/Theme/ThemeToggle';
+import { useThemeStore, getThemeColors } from './services/theme-service';
+import { AlertsBadge } from './components/Alerts/AlertsBadge';
 import './App.css';
 
 // Inner App Component to use Auth Hook
 function AppContent() {
   const { user, login, logout } = useAuth();
   const location = useLocation();
+  const { theme } = useThemeStore();
+  const colors = getThemeColors(theme);
 
   if (!user) {
     return (
@@ -138,12 +143,12 @@ function AppContent() {
   }
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: colors.background, transition: 'background 0.3s ease' }}>
       {/* Top Navigation Bar */}
       <div style={{
         minHeight: '50px',
-        background: '#111',
-        borderBottom: '1px solid #222',
+        background: theme === 'dark' ? '#111' : '#f8f9fa',
+        borderBottom: `1px solid ${colors.border}`,
         display: 'flex',
         alignItems: 'center',
         padding: 'clamp(8px, 2vw, 20px)',
@@ -173,7 +178,7 @@ function AppContent() {
               T
             </div>
             <span style={{
-              color: '#fff',
+              color: colors.text,
               fontSize: '16px',
               fontWeight: 600,
               letterSpacing: '-0.3px',
@@ -269,6 +274,7 @@ function AppContent() {
 
         {/* Right: User Info */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <AlertsBadge />
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -333,6 +339,9 @@ function AppContent() {
           <Route path="/analytics" element={<AnalyticsTab />} />
         </Routes>
       </div>
+
+      {/* Theme Toggle */}
+      <ThemeToggle />
     </div>
   );
 }

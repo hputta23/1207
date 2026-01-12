@@ -1,5 +1,7 @@
 import { SMA, EMA, RSI, MACD, BollingerBands } from 'technicalindicators';
-import { BASE_URL } from './api-client';
+
+// Use environment variable for production, fallback to localhost for development
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface StockData {
     date: string;

@@ -10,6 +10,7 @@ import { BacktestPanel } from '../components/Analytics/BacktestPanel';
 import { useDataSourceStore } from '../services/data-source-config';
 import { DataSourceSelector } from '../components/DataSourceSelector/DataSourceSelector';
 import { activityService } from '../services/activity-service';
+import { AlertsPanel } from '../components/Alerts/AlertsPanel';
 
 // Tab button component
 const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
@@ -296,6 +297,9 @@ export function AnalyticsTab() {
                                 />
                             )}
                         </div>
+
+                        {/* Price Alerts */}
+                        <AlertsPanel symbol={ticker} currentPrice={data.statistics.currentPrice} />
 
                         {/* Tabs */}
                         <div style={{ borderBottom: '1px solid #333', marginBottom: '20px', display: 'flex' }}>

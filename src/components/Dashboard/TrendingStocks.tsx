@@ -12,18 +12,24 @@ export function TrendingStocks() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
+        const fetchData = async (isInitialLoad = false) => {
+            // Only show loading spinner on initial load, not on refreshes
+            if (isInitialLoad) {
+                setLoading(true);
+            }
             const data = await trendingStocksService.fetchTrendingStocks();
             setGainers(data.gainers);
             setLosers(data.losers);
-            setLoading(false);
+            if (isInitialLoad) {
+                setLoading(false);
+            }
         };
 
-        fetchData();
+        // Initial load with loading state
+        fetchData(true);
 
-        // Update every 60 seconds
-        const interval = setInterval(fetchData, 60000);
+        // Subsequent refreshes without loading state (silent updates)
+        const interval = setInterval(() => fetchData(false), 60000);
 
         return () => clearInterval(interval);
     }, []);
