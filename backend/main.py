@@ -13,6 +13,19 @@ import datetime
 
 app = FastAPI()
 
+# Proxy for Yahoo Finance (for Market Overview & Trending service)
+import requests
+@app.get("/api/yahoo/{path:path}")
+def proxy_yahoo(path: str):
+    url = f"https://query1.finance.yahoo.com/{path}"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+    try:
+        resp = requests.get(url, headers=headers)
+        return resp.json()
+    except Exception as e:
+        print(f"Proxy Error: {e}")
+        raise HTTPException(status_code=500, detail="Proxy failed")
+
 @app.get("/health")
 async def health_check():
     return {
