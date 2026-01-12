@@ -7,6 +7,7 @@ import { WatchlistTab } from './pages/WatchlistTab';
 import { AnalyticsTab } from './pages/AnalyticsTab';
 import { ThemeToggle } from './components/Theme/ThemeToggle';
 import { useThemeStore, getThemeColors } from './services/theme-service';
+import { AlertsBadge } from './components/Alerts/AlertsBadge';
 import './App.css';
 
 // Inner App Component to use Auth Hook
@@ -273,6 +274,7 @@ function AppContent() {
 
         {/* Right: User Info */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <AlertsBadge />
           <div style={{
             display: 'flex',
             alignItems: 'center',
