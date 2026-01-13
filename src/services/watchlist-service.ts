@@ -70,8 +70,13 @@ export const useWatchlistStore = create<WatchlistState>()(
 
 // Legacy class-based service for backwards compatibility
 class WatchlistService {
-    addTicker(ticker: string): void {
-        useWatchlistStore.getState().addToWatchlist(ticker);
+    addTicker(ticker: string): boolean {
+        const store = useWatchlistStore.getState();
+        if (store.isInWatchlist(ticker)) {
+            return false;
+        }
+        store.addToWatchlist(ticker);
+        return true;
     }
 
     removeTicker(ticker: string): void {
@@ -84,6 +89,10 @@ class WatchlistService {
 
     hasTicker(ticker: string): boolean {
         return useWatchlistStore.getState().isInWatchlist(ticker);
+    }
+
+    getCount(): number {
+        return useWatchlistStore.getState().watchlist.length;
     }
 
     clearAll(): void {
