@@ -4,6 +4,7 @@ import { marketOverviewService, type IndexData, type MarketStatus } from '../../
 export function MarketOverview() {
     const [indices, setIndices] = useState<IndexData[]>([]);
     const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
+    const [scrollDirection, setScrollDirection] = useState<'left' | 'right'>('left');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -59,34 +60,65 @@ export function MarketOverview() {
                     </p>
                 </div>
 
-                {marketStatus && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '6px 12px',
-                        background: marketStatus.isOpen
-                            ? 'rgba(34, 197, 94, 0.15)'
-                            : 'rgba(239, 68, 68, 0.15)',
-                        border: `1px solid ${marketStatus.isOpen ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                        borderRadius: '6px',
-                    }}>
-                        <div style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: marketStatus.isOpen ? '#22c55e' : '#ef4444',
-                            boxShadow: marketStatus.isOpen ? '0 0 8px #22c55e' : 'none',
-                        }} />
-                        <span style={{
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {/* Direction Toggle Button */}
+                    <button
+                        onClick={() => setScrollDirection(prev => prev === 'left' ? 'right' : 'left')}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px',
+                            background: 'rgba(59, 130, 246, 0.15)',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            borderRadius: '6px',
+                            color: '#3b82f6',
                             fontSize: '11px',
                             fontWeight: 600,
-                            color: marketStatus.isOpen ? '#22c55e' : '#ef4444',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.25)';
+                            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
+                            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                        }}
+                    >
+                        {scrollDirection === 'left' ? '← Scroll' : 'Scroll →'}
+                    </button>
+
+                    {marketStatus && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px',
+                            background: marketStatus.isOpen
+                                ? 'rgba(34, 197, 94, 0.15)'
+                                : 'rgba(239, 68, 68, 0.15)',
+                            border: `1px solid ${marketStatus.isOpen ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                            borderRadius: '6px',
                         }}>
-                            {marketStatus.statusText}
-                        </span>
-                    </div>
-                )}
+                            <div style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                background: marketStatus.isOpen ? '#22c55e' : '#ef4444',
+                                boxShadow: marketStatus.isOpen ? '0 0 8px #22c55e' : 'none',
+                            }} />
+                            <span style={{
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                color: marketStatus.isOpen ? '#22c55e' : '#ef4444',
+                            }}>
+                                {marketStatus.statusText}
+                            </span>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Scrolling Ticker */}
@@ -100,8 +132,11 @@ export function MarketOverview() {
                         style={{
                             display: 'flex',
                             gap: '20px',
-                            animation: 'scroll-left 40s linear infinite',
-                            paddingLeft: '100%',
+                            animation: scrollDirection === 'left'
+                                ? 'scroll-left 40s linear infinite'
+                                : 'scroll-right 40s linear infinite',
+                            paddingLeft: scrollDirection === 'left' ? '100%' : '0',
+                            paddingRight: scrollDirection === 'right' ? '100%' : '0',
                         }}
                     >
                         {scrollingIndices.map((index, idx) => {
@@ -190,6 +225,15 @@ export function MarketOverview() {
                     }
                     100% {
                         transform: translateX(-33.33%);
+                    }
+                }
+
+                @keyframes scroll-right {
+                    0% {
+                        transform: translateX(-33.33%);
+                    }
+                    100% {
+                        transform: translateX(0);
                     }
                 }
 
