@@ -18,7 +18,12 @@ interface WatchlistState {
 export const useWatchlistStore = create<WatchlistState>()(
     persist(
         (set, get) => ({
-            watchlist: [],
+            watchlist: [
+                { symbol: 'AAPL', name: 'Apple Inc.', addedAt: Date.now() },
+                { symbol: 'MSFT', name: 'Microsoft Corp.', addedAt: Date.now() },
+                { symbol: 'GOOGL', name: 'Alphabet Inc.', addedAt: Date.now() },
+                { symbol: 'AMZN', name: 'Amazon.com Inc.', addedAt: Date.now() },
+            ],
 
             addToWatchlist: (symbol: string, name?: string) => {
                 const { watchlist, isInWatchlist } = get();
