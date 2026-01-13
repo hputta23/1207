@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { watchlistService } from '../../services/watchlist-service';
 import { activityService } from '../../services/activity-service';
 import { BASE_URL } from '../../services/api-client';
+import { EmptyState } from '../Common/EmptyState';
 
 interface StockQuote {
     symbol: string;
@@ -89,36 +90,16 @@ export function WatchlistQuickView() {
 
     if (watchlist.length === 0) {
         return (
-            <div style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '16px',
-                padding: '32px',
-                textAlign: 'center',
-                marginBottom: '32px',
-            }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>⭐</div>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 600, color: '#fff' }}>
-                    Your Watchlist is Empty
-                </h3>
-                <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#888' }}>
-                    Add stocks to track their performance and get quick access
-                </p>
-                <button
-                    onClick={() => navigate('/watchlist')}
-                    style={{
-                        padding: '10px 20px',
-                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
+            <div style={{ marginBottom: '32px' }}>
+                <EmptyState
+                    icon="⭐"
+                    title="Your Watchlist is Empty"
+                    description="Add stocks to track their performance in real-time and get quick access to charts and news."
+                    action={{
+                        label: "Go to Watchlist",
+                        onClick: () => navigate('/watchlist')
                     }}
-                >
-                    Browse Stocks
-                </button>
+                />
             </div>
         );
     }

@@ -157,12 +157,13 @@ export function WatchlistCard({ ticker, onRemove }: WatchlistCardProps) {
                     title={`View chart for ${ticker}`}
                     style={{
                         flex: 1,
-                        padding: '8px 12px',
+                        minHeight: '44px',
+                        padding: '12px 16px',
                         background: 'rgba(59, 130, 246, 0.1)',
                         border: '1px solid rgba(59, 130, 246, 0.3)',
                         borderRadius: '6px',
                         color: '#3b82f6',
-                        fontSize: '12px',
+                        fontSize: '13px',
                         fontWeight: 600,
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
@@ -182,12 +183,13 @@ export function WatchlistCard({ ticker, onRemove }: WatchlistCardProps) {
                     title={`View news for ${ticker}`}
                     style={{
                         flex: 1,
-                        padding: '8px 12px',
+                        minHeight: '44px',
+                        padding: '12px 16px',
                         background: 'rgba(59, 130, 246, 0.1)',
                         border: '1px solid rgba(59, 130, 246, 0.3)',
                         borderRadius: '6px',
                         color: '#3b82f6',
-                        fontSize: '12px',
+                        fontSize: '13px',
                         fontWeight: 600,
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
@@ -209,12 +211,14 @@ export function WatchlistCard({ ticker, onRemove }: WatchlistCardProps) {
                     aria-label={`Remove ${ticker} from watchlist`}
                     title={`Remove ${ticker} from watchlist`}
                     style={{
-                        padding: '8px 12px',
+                        minHeight: '44px',
+                        minWidth: '44px',
+                        padding: '12px 16px',
                         background: 'rgba(239, 68, 68, 0.1)',
                         border: '1px solid rgba(239, 68, 68, 0.3)',
                         borderRadius: '6px',
                         color: '#ef4444',
-                        fontSize: '12px',
+                        fontSize: '16px',
                         fontWeight: 600,
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface AddTickerModalProps {
     isOpen: boolean;
@@ -10,6 +10,22 @@ export function AddTickerModal({ isOpen, onClose, onAdd }: AddTickerModalProps) 
     const [ticker, setTicker] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    // Focus management and keyboard handler
+    useEffect(() => {
+        if (!isOpen) return;
+
+        // Handle Escape key
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                handleClose();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, ticker]); // Include ticker in deps for handleClose
 
     if (!isOpen) return null;
 
@@ -55,6 +71,9 @@ export function AddTickerModal({ isOpen, onClose, onAdd }: AddTickerModalProps) 
 
     return (
         <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
             style={{
                 position: 'fixed',
                 top: 0,
@@ -70,6 +89,7 @@ export function AddTickerModal({ isOpen, onClose, onAdd }: AddTickerModalProps) 
             onClick={handleClose}
         >
             <div
+                ref={modalRef}
                 style={{
                     background: '#1a1a1a',
                     border: '1px solid #333',
@@ -81,7 +101,7 @@ export function AddTickerModal({ isOpen, onClose, onAdd }: AddTickerModalProps) 
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 700, color: '#fff' }}>
+                <h2 id="modal-title" style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 700, color: '#fff' }}>
                     Add to Watchlist
                 </h2>
                 <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#888' }}>

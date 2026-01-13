@@ -1,3 +1,4 @@
+import { format, formatDistanceToNow } from 'date-fns';
 import type { NewsItem } from '../../services/news-service';
 import { FinancialSentiment } from '../../utils/sentiment';
 
@@ -17,12 +18,9 @@ export function NewsCard({ item }: NewsCardProps) {
                 ? '#ef4444'
                 : '#888';
 
-    const date = new Date(item.datetime).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    const newsDate = new Date(item.datetime);
+    const date = formatDistanceToNow(newsDate, { addSuffix: true });
+    const fullDate = format(newsDate, 'MMM d, yyyy h:mm a zzz');
 
     return (
         <tr style={{ borderBottom: '1px solid #222' }}>
@@ -49,7 +47,10 @@ export function NewsCard({ item }: NewsCardProps) {
             <td style={{ padding: '12px 8px', fontSize: '12px', color: '#666' }}>
                 {item.source}
             </td>
-            <td style={{ padding: '12px 8px', fontSize: '12px', color: '#666', whiteSpace: 'nowrap' }}>
+            <td
+                style={{ padding: '12px 8px', fontSize: '12px', color: '#666', whiteSpace: 'nowrap' }}
+                title={fullDate}
+            >
                 {date}
             </td>
         </tr>
