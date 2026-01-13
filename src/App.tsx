@@ -8,13 +8,18 @@ import { AnalyticsTab } from './pages/AnalyticsTab';
 import { ThemeToggle } from './components/Theme/ThemeToggle';
 import { useThemeStore, getThemeColors } from './services/theme-service';
 import { AlertsBadge } from './components/Alerts/AlertsBadge';
+import { ProfileModal } from './components/Profile/ProfileModal';
+import { useUserProfileStore } from './services/user-profile-service';
+import { useState } from 'react';
 import './App.css';
 
 // Inner App Component to use Auth Hook
 function AppContent() {
-  const { user, login, logout } = useAuth();
+  const { user, login } = useAuth(); // Removed logout since we replaced it with profile
   const location = useLocation();
   const { theme } = useThemeStore();
+  const { profile } = useUserProfileStore();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const colors = getThemeColors(theme);
 
   if (!user) {
@@ -275,58 +280,51 @@ function AppContent() {
         {/* Right: User Info */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <AlertsBadge />
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '4px 12px',
-            background: '#1a1a1a',
-            borderRadius: '6px',
-          }}>
+
+          {/* Profile Trigger */}
+          <div
+            onClick={() => setIsProfileOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '4px 12px',
+              background: '#1a1a1a',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              border: '1px solid transparent',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+              e.currentTarget.style.background = '#222';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'transparent';
+              e.currentTarget.style.background = '#1a1a1a';
+            }}
+          >
             <div style={{
               width: '24px',
               height: '24px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '10px',
-              fontWeight: 600,
-              color: '#fff',
+              overflow: 'hidden',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
             }}>
-              {user.username.charAt(0).toUpperCase()}
+              <img src={profile.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%' }} />
             </div>
-            <span style={{ color: '#ccc', fontSize: '12px', fontWeight: 500 }}>
-              {user.username}
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ color: '#fff', fontSize: '12px', fontWeight: 500, lineHeight: 1 }}>
+                {profile.nickname}
+              </span>
+              <span style={{ color: '#3b82f6', fontSize: '10px', fontWeight: 600, fontFamily: 'monospace' }}>
+                ${profile.balance.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })}
+              </span>
+            </div>
           </div>
-
-          <button
-            onClick={logout}
-            style={{
-              padding: '6px 12px',
-              background: 'transparent',
-              border: '1px solid #333',
-              borderRadius: '6px',
-              color: '#888',
-              fontSize: '12px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#ef4444';
-              e.currentTarget.style.color = '#ef4444';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#333';
-              e.currentTarget.style.color = '#888';
-            }}
-          >
-            Sign out
-          </button>
         </div>
+
+        <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
       </div>
 
       {/* Main Content Area */}
