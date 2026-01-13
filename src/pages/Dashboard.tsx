@@ -19,10 +19,10 @@ export function Dashboard() {
         // Load watchlist count on mount
         setWatchlistCount(watchlistService.getCount());
 
-        // Update count every second to catch changes from other tabs
+        // Update count every 30 seconds to catch changes from other tabs
         const interval = setInterval(() => {
             setWatchlistCount(watchlistService.getCount());
-        }, 1000);
+        }, 30000);
 
         return () => clearInterval(interval);
     }, []);

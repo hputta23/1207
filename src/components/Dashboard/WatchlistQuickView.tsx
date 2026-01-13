@@ -25,8 +25,8 @@ export function WatchlistQuickView() {
 
         updateWatchlist();
 
-        // Update watchlist every second
-        const interval = setInterval(updateWatchlist, 1000);
+        // Update watchlist every 30 seconds
+        const interval = setInterval(updateWatchlist, 30000);
 
         return () => clearInterval(interval);
     }, []);

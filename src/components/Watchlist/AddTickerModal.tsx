@@ -9,10 +9,11 @@ interface AddTickerModalProps {
 export function AddTickerModal({ isOpen, onClose, onAdd }: AddTickerModalProps) {
     const [ticker, setTicker] = useState('');
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -27,17 +28,26 @@ export function AddTickerModal({ isOpen, onClose, onAdd }: AddTickerModalProps) 
             return;
         }
 
-        const added = onAdd(trimmed);
-        if (!added) {
-            setError('Ticker already in watchlist');
-            return;
-        }
+        setIsSubmitting(true);
+        try {
+            const added = onAdd(trimmed);
+            if (!added) {
+                setError('Ticker already in watchlist');
+                return;
+            }
 
-        setTicker('');
-        onClose();
+            setTicker('');
+            onClose();
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleClose = () => {
+        // Warn if user has unsaved input
+        if (ticker.trim() && !window.confirm('You have unsaved changes. Are you sure you want to close?')) {
+            return;
+        }
         setTicker('');
         setError('');
         onClose();
@@ -84,6 +94,9 @@ export function AddTickerModal({ isOpen, onClose, onAdd }: AddTickerModalProps) 
                         value={ticker}
                         onChange={(e) => setTicker(e.target.value.toUpperCase())}
                         placeholder="e.g., AAPL, TSLA, NVDA"
+                        aria-label="Ticker symbol"
+                        aria-invalid={!!error}
+                        aria-describedby={error ? "ticker-error" : undefined}
                         autoFocus
                         style={{
                             width: '100%',
@@ -101,7 +114,7 @@ export function AddTickerModal({ isOpen, onClose, onAdd }: AddTickerModalProps) 
                     />
 
                     {error && (
-                        <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#ef4444' }}>
+                        <p id="ticker-error" role="alert" style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#ef4444' }}>
                             {error}
                         </p>
                     )}
@@ -135,22 +148,26 @@ export function AddTickerModal({ isOpen, onClose, onAdd }: AddTickerModalProps) 
                         </button>
                         <button
                             type="submit"
+                            disabled={isSubmitting || !ticker.trim()}
                             style={{
                                 flex: 1,
                                 padding: '12px 24px',
-                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                background: isSubmitting || !ticker.trim()
+                                    ? '#333'
+                                    : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                                 border: 'none',
                                 borderRadius: '8px',
-                                color: '#fff',
+                                color: isSubmitting || !ticker.trim() ? '#666' : '#fff',
                                 fontSize: '14px',
                                 fontWeight: 600,
-                                cursor: 'pointer',
+                                cursor: isSubmitting || !ticker.trim() ? 'not-allowed' : 'pointer',
                                 transition: 'transform 0.15s ease',
+                                opacity: isSubmitting || !ticker.trim() ? 0.5 : 1,
                             }}
-                            onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
+                            onMouseEnter={(e) => !isSubmitting && ticker.trim() && (e.currentTarget.style.transform = 'translateY(-1px)')}
                             onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
                         >
-                            Add Ticker
+                            {isSubmitting ? 'Adding...' : 'Add Ticker'}
                         </button>
                     </div>
                 </form>

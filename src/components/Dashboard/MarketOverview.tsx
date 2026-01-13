@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import { marketOverviewService, type IndexData, type MarketStatus } from '../../services/market-overview-service';
 
 export function MarketOverview() {
     const [indices, setIndices] = useState<IndexData[]>([]);
     const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
     const [scrollDirection, setScrollDirection] = useState<'left' | 'right'>('left');
+    const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
     useEffect(() => {
         const fetchData = async () => {
             const data = await marketOverviewService.fetchAllIndices();
             setIndices(data);
             setMarketStatus(marketOverviewService.getMarketStatus());
+            setLastUpdated(new Date());
         };
 
         fetchData();
@@ -55,8 +58,11 @@ export function MarketOverview() {
                     }}>
                         📊 Market Overview
                     </h2>
-                    <p style={{ margin: 0, fontSize: '11px', color: '#888' }}>
+                    <p style={{ margin: '0 0 2px 0', fontSize: '11px', color: '#888' }}>
                         Live market indices • Updates every 30 seconds
+                    </p>
+                    <p style={{ margin: 0, fontSize: '10px', color: '#666' }}>
+                        Last updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
                     </p>
                 </div>
 
@@ -64,6 +70,8 @@ export function MarketOverview() {
                     {/* Direction Toggle Button */}
                     <button
                         onClick={() => setScrollDirection(prev => prev === 'left' ? 'right' : 'left')}
+                        aria-label={`Toggle scroll direction. Current: ${scrollDirection === 'left' ? 'left to right' : 'right to left'}`}
+                        title={`Toggle scroll direction. Current: ${scrollDirection === 'left' ? 'left to right' : 'right to left'}`}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
