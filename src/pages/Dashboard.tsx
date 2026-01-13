@@ -116,9 +116,9 @@ export function Dashboard() {
                 {/* Quick Stats */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                    gap: '20px',
-                    marginBottom: '40px',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                    gap: '12px',
+                    marginBottom: '32px',
                 }}>
                     {quickStats.map((stat) => (
                         <div
@@ -127,15 +127,15 @@ export function Dashboard() {
                                 background: 'rgba(255, 255, 255, 0.03)',
                                 border: '1px solid rgba(255, 255, 255, 0.1)',
                                 borderRadius: '12px',
-                                padding: '24px',
+                                padding: 'clamp(16px, 4vw, 24px)',
                                 backdropFilter: 'blur(10px)',
                             }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                 <div style={{
-                                    fontSize: '32px',
-                                    width: '48px',
-                                    height: '48px',
+                                    fontSize: 'clamp(20px, 6vw, 32px)',
+                                    width: 'clamp(32px, 8vw, 48px)',
+                                    height: 'clamp(32px, 8vw, 48px)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -145,8 +145,8 @@ export function Dashboard() {
                                     {stat.icon}
                                 </div>
                                 <div>
-                                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#fff' }}>{stat.value}</div>
-                                    <div style={{ fontSize: '13px', color: '#888' }}>{stat.label}</div>
+                                    <div style={{ fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 700, color: '#fff' }}>{stat.value}</div>
+                                    <div style={{ fontSize: 'clamp(11px, 3vw, 13px)', color: '#888' }}>{stat.label}</div>
                                 </div>
                             </div>
                         </div>
@@ -165,7 +165,7 @@ export function Dashboard() {
                     </h2>
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
                         gap: '20px',
                     }}>
                         {navigationCards.map((card) => (
@@ -176,7 +176,7 @@ export function Dashboard() {
                                     background: 'rgba(255, 255, 255, 0.05)',
                                     border: '1px solid rgba(255, 255, 255, 0.1)',
                                     borderRadius: '16px',
-                                    padding: '32px',
+                                    padding: 'clamp(20px, 5vw, 32px)',
                                     textAlign: 'left',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s ease',
@@ -193,14 +193,14 @@ export function Dashboard() {
                                 }}
                             >
                                 <div style={{
-                                    fontSize: '48px',
+                                    fontSize: 'clamp(32px, 8vw, 48px)',
                                     marginBottom: '16px',
                                 }}>
                                     {card.icon}
                                 </div>
                                 <h3 style={{
                                     margin: '0 0 8px 0',
-                                    fontSize: '20px',
+                                    fontSize: 'clamp(18px, 4vw, 20px)',
                                     fontWeight: 600,
                                     color: '#fff',
                                 }}>

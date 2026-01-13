@@ -4,7 +4,7 @@ import { marketOverviewService, type IndexData, type MarketStatus } from '../../
 export function MarketOverview() {
     const [indices, setIndices] = useState<IndexData[]>([]);
     const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
-    const [scrollDirection, setScrollDirection] = useState<'left' | 'right'>('left');
+    const [scrollDirection, setScrollDirection] = useState<'left' | 'right'>('right');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -46,7 +46,7 @@ export function MarketOverview() {
                 <div>
                     <h2 style={{
                         margin: '0 0 4px 0',
-                        fontSize: '18px',
+                        fontSize: 'clamp(16px, 4vw, 18px)',
                         fontWeight: 600,
                         color: '#fff',
                         display: 'flex',
@@ -109,7 +109,7 @@ export function MarketOverview() {
                                 background: marketStatus.isOpen ? '#22c55e' : '#ef4444',
                                 boxShadow: marketStatus.isOpen ? '0 0 8px #22c55e' : 'none',
                             }} />
-                            <span style={{
+                            <span className="market-status-text" style={{
                                 fontSize: '11px',
                                 fontWeight: 600,
                                 color: marketStatus.isOpen ? '#22c55e' : '#ef4444',
@@ -131,7 +131,7 @@ export function MarketOverview() {
                     <div
                         style={{
                             display: 'flex',
-                            gap: '20px',
+                            gap: 'clamp(12px, 3vw, 20px)',
                             animation: scrollDirection === 'left'
                                 ? 'scroll-left 40s linear infinite'
                                 : 'scroll-right 40s linear infinite',
@@ -150,18 +150,18 @@ export function MarketOverview() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '12px',
-                                        padding: '12px 20px',
+                                        padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
                                         background: 'rgba(0, 0, 0, 0.3)',
                                         border: '1px solid rgba(255, 255, 255, 0.1)',
                                         borderRadius: '10px',
-                                        minWidth: '220px',
+                                        minWidth: 'clamp(160px, 40vw, 220px)',
                                         whiteSpace: 'nowrap',
                                     }}
                                 >
                                     {/* Symbol and Name */}
                                     <div style={{ flex: 1 }}>
                                         <div style={{
-                                            fontSize: '10px',
+                                            fontSize: 'clamp(10px, 2vw, 12px)',
                                             color: '#888',
                                             textTransform: 'uppercase',
                                             letterSpacing: '0.5px',
@@ -170,7 +170,7 @@ export function MarketOverview() {
                                             {index.name}
                                         </div>
                                         <div style={{
-                                            fontSize: '18px',
+                                            fontSize: 'clamp(15px, 4vw, 18px)',
                                             fontWeight: 700,
                                             color: '#fff',
                                         }}>
@@ -181,7 +181,7 @@ export function MarketOverview() {
                                     {/* Change */}
                                     <div style={{ textAlign: 'right' }}>
                                         <div style={{
-                                            fontSize: '13px',
+                                            fontSize: 'clamp(11px, 2vw, 13px)',
                                             fontWeight: 600,
                                             color: changeColor,
                                             marginBottom: '2px',
@@ -219,6 +219,12 @@ export function MarketOverview() {
 
             {/* CSS Animation */}
             <style>{`
+                @media (max-width: 480px) {
+                    .market-status-text {
+                        display: none;
+                    }
+                }
+
                 @keyframes scroll-left {
                     0% {
                         transform: translateX(0);
