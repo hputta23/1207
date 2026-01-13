@@ -6,6 +6,7 @@ import { NewsTab } from './pages/NewsTab';
 import { WatchlistTab } from './pages/WatchlistTab';
 import { AnalyticsTab } from './pages/AnalyticsTab';
 import { ThemeToggle } from './components/Theme/ThemeToggle';
+import { KeyboardShortcuts } from './components/Common/KeyboardShortcuts';
 import { useThemeStore, getThemeColors } from './services/theme-service';
 import { AlertsBadge } from './components/Alerts/AlertsBadge';
 import './App.css';
@@ -342,6 +343,9 @@ function AppContent() {
 
       {/* Theme Toggle */}
       <ThemeToggle />
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcuts />
     </div>
   );
 }

@@ -18,6 +18,7 @@ export function WatchlistCard({ ticker, onRemove }: WatchlistCardProps) {
     const navigate = useNavigate();
     const [quote, setQuote] = useState<StockQuote | null>(null);
     const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         const fetchQuote = async () => {
@@ -73,6 +74,16 @@ export function WatchlistCard({ ticker, onRemove }: WatchlistCardProps) {
         navigate(`/news?symbol=${ticker}`);
     };
 
+    const handleCopyTicker = async () => {
+        try {
+            await navigator.clipboard.writeText(ticker);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy ticker:', error);
+        }
+    };
+
     return (
         <div
             style={{
@@ -96,20 +107,41 @@ export function WatchlistCard({ ticker, onRemove }: WatchlistCardProps) {
         >
             {/* Ticker Symbol and Price */}
             <div>
-                <div
+                <button
+                    onClick={handleCopyTicker}
+                    aria-label={`Copy ${ticker} to clipboard`}
+                    title={copied ? 'Copied!' : `Click to copy ${ticker}`}
                     style={{
-                        display: 'inline-block',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
                         padding: '6px 14px',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        background: copied
+                            ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                            : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        border: 'none',
                         borderRadius: '8px',
                         fontSize: '16px',
                         fontWeight: 700,
                         color: '#fff',
                         marginBottom: '12px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!copied) {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
                     }}
                 >
                     {ticker}
-                </div>
+                    {copied && <span style={{ fontSize: '14px' }}>✓</span>}
+                </button>
 
                 {loading ? (
                     <div style={{ color: '#666', fontSize: '12px', marginTop: '8px' }}>Loading price...</div>
@@ -125,11 +157,14 @@ export function WatchlistCard({ ticker, onRemove }: WatchlistCardProps) {
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{
-                                fontSize: '13px',
-                                fontWeight: 600,
-                                color: quote.change >= 0 ? '#22c55e' : '#ef4444',
-                            }}>
+                            <span
+                                style={{
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    color: quote.change >= 0 ? '#22c55e' : '#ef4444',
+                                }}
+                                aria-label={quote.change >= 0 ? 'Price increase' : 'Price decrease'}
+                            >
                                 {quote.change >= 0 ? '▲' : '▼'} {Math.abs(quote.change).toFixed(2)}
                             </span>
                             <span style={{
