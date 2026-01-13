@@ -4,6 +4,7 @@ import { Dashboard } from './pages/Dashboard';
 import { ChartsPage } from './pages/ChartsPage';
 import { NewsTab } from './pages/NewsTab';
 import { WatchlistTab } from './pages/WatchlistTab';
+import { TradingPage } from './pages/TradingPage';
 import { AnalyticsTab } from './pages/AnalyticsTab';
 import { ThemeToggle } from './components/Theme/ThemeToggle';
 import { useThemeStore, getThemeColors } from './services/theme-service';
@@ -259,6 +260,22 @@ function AppContent() {
               Watchlist
             </Link>
             <Link
+              to="/trading"
+              style={{
+                padding: '8px 16px',
+                background: location.pathname === '/trading' ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                border: location.pathname === '/trading' ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent',
+                borderRadius: '6px',
+                color: location.pathname === '/trading' ? '#3b82f6' : '#888',
+                fontSize: '14px',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              Trade
+            </Link>
+            <Link
               to="/analytics"
               style={{
                 padding: '8px 16px',
@@ -334,6 +351,7 @@ function AppContent() {
           <Route path="/charts" element={<ChartsPage />} />
           <Route path="/news" element={<NewsTab />} />
           <Route path="/watchlist" element={<WatchlistTab />} />
+          <Route path="/trading" element={<TradingPage />} />
           <Route path="/analytics" element={<AnalyticsTab />} />
         </Routes>
       </div>
