@@ -30,16 +30,10 @@ class NewsFeedService {
         this.isFetching = true;
 
         try {
-            // Fetch from NewsAPI (using general business/finance news)
-            const response = await fetch(
-                'https://newsapi.org/v2/top-headlines?category=business&country=us&pageSize=20',
-                {
-                    headers: {
-                        // Using a demo API key - in production, this should be from env
-                        'X-Api-Key': 'demo',
-                    },
-                }
-            );
+            // Fetch from Backend (Proxy for Google News + Sentiment)
+            // Using SPY as a proxy for general market news
+            const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${BASE_URL}/news/SPY`);
 
             if (!response.ok) {
                 // Fallback to mock data if API fails
@@ -48,14 +42,16 @@ class NewsFeedService {
 
             const data = await response.json();
 
-            if (data.articles && Array.isArray(data.articles)) {
-                this.cache = data.articles.map((article: any) => ({
-                    title: article.title,
-                    source: article.source?.name || 'Unknown',
+            if (data.news && Array.isArray(data.news)) {
+                this.cache = data.news.map((article: any) => ({
+                    title: article.headline,
+                    source: article.source,
                     url: article.url,
-                    publishedAt: article.publishedAt,
-                    sentiment: this.analyzeSentiment(article.title),
-                    symbols: this.extractSymbols(article.title),
+                    publishedAt: new Date(article.datetime * 1000).toISOString(),
+                    // Map Backend "Bullish" -> Frontend "positive"
+                    sentiment: this.mapSentiment(article.sentiment),
+                    sentiment_score: article.sentiment_score,
+                    symbols: ['SPY'], // Default since we fetched SPY
                 }));
                 this.lastFetchTime = now;
                 return this.cache?.slice(0, limit) || [];
@@ -70,32 +66,16 @@ class NewsFeedService {
         }
     }
 
-    private analyzeSentiment(title: string): 'positive' | 'negative' | 'neutral' {
-        const lowerTitle = title.toLowerCase();
-
-        const positiveWords = ['surge', 'soar', 'gain', 'jump', 'rally', 'up', 'rise', 'boost', 'profit', 'growth', 'high', 'record'];
-        const negativeWords = ['fall', 'drop', 'crash', 'plunge', 'decline', 'loss', 'down', 'sink', 'tumble', 'weak', 'low', 'concern'];
-
-        const positiveCount = positiveWords.filter(word => lowerTitle.includes(word)).length;
-        const negativeCount = negativeWords.filter(word => lowerTitle.includes(word)).length;
-
-        if (positiveCount > negativeCount) return 'positive';
-        if (negativeCount > positiveCount) return 'negative';
-        return 'neutral';
+    private mapSentiment(backendLabel: string): 'positive' | 'negative' | 'neutral' {
+        switch (backendLabel) {
+            case 'Bullish': return 'positive';
+            case 'Bearish': return 'negative';
+            default: return 'neutral';
+        }
     }
 
-    private extractSymbols(title: string): string[] {
-        const symbols: string[] = [];
-        const commonStocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'AMD', 'INTC'];
-
-        commonStocks.forEach(symbol => {
-            if (title.toUpperCase().includes(symbol)) {
-                symbols.push(symbol);
-            }
-        });
-
-        return symbols;
-    }
+    // Removed local analyzeSentiment as backend handles it now
+    // Removed extractSymbols as backend context is specific
 
     private getMockNews(): NewsItem[] {
         const now = new Date();
@@ -118,12 +98,12 @@ class NewsFeedService {
                 symbols: [],
             },
             {
-                title: 'Tesla Announces Record Deliveries for Quarter',
+                title: 'Markets Await Inflation Data',
                 source: 'Bloomberg',
                 url: '#',
                 publishedAt: new Date(now.getTime() - 90 * 60 * 1000).toISOString(),
-                sentiment: 'positive',
-                symbols: ['TSLA'],
+                sentiment: 'neutral',
+                symbols: ['SPY'],
             },
             {
                 title: 'Oil Prices Drop on Demand Concerns',
@@ -131,38 +111,6 @@ class NewsFeedService {
                 url: '#',
                 publishedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
                 sentiment: 'negative',
-                symbols: [],
-            },
-            {
-                title: 'Apple Unveils New Product Lineup',
-                source: 'CNBC',
-                url: '#',
-                publishedAt: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(),
-                sentiment: 'positive',
-                symbols: ['AAPL'],
-            },
-            {
-                title: 'Banking Sector Faces Regulatory Scrutiny',
-                source: 'Financial Times',
-                url: '#',
-                publishedAt: new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString(),
-                sentiment: 'negative',
-                symbols: [],
-            },
-            {
-                title: 'Semiconductor Demand Reaches All-Time High',
-                source: 'Reuters',
-                url: '#',
-                publishedAt: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(),
-                sentiment: 'positive',
-                symbols: ['NVDA', 'AMD', 'INTC'],
-            },
-            {
-                title: 'Consumer Spending Shows Strong Growth',
-                source: 'Bloomberg',
-                url: '#',
-                publishedAt: new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString(),
-                sentiment: 'positive',
                 symbols: [],
             },
         ];

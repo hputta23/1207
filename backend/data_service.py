@@ -3,7 +3,18 @@ import pandas as pd
 from datetime import datetime, timedelta
 import requests
 import os
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from cachetools import cached, TTLCache
 
+# Setup Caching
+# Stock Data: 5 minutes TTL (300s)
+# News Data: 15 minutes TTL (900s)
+stock_cache = TTLCache(maxsize=100, ttl=300)
+news_cache = TTLCache(maxsize=100, ttl=900)
+
+analyzer = SentimentIntensityAnalyzer()
+
+@cached(stock_cache)
 def fetch_stock_data(ticker: str, period: str = "2y", api_source: str = "yahoo", api_key: str = None):
     """
     Fetches historical stock data for the given ticker.
@@ -284,9 +295,11 @@ def get_current_price(ticker: str):
     except:
         return None
 
+@cached(news_cache)
 def fetch_stock_news(ticker: str):
     """
     Fetches news for a given stock ticker using Google News RSS.
+    Performs Sentiment Analysis using VADER.
     """
     import feedparser
     import urllib.parse
@@ -316,12 +329,24 @@ def fetch_stock_news(ticker: str):
         except:
             timestamp = datetime.now().timestamp()
             
+        # Sentiment Analysis
+        sentiment = analyzer.polarity_scores(title)
+        compound = sentiment['compound']
+        
+        label = "Neutral"
+        if compound >= 0.05:
+            label = "Bullish"
+        elif compound <= -0.05:
+            label = "Bearish"
+            
         news_items.append({
             "headline": title,
             "url": entry.link,
             "source": source,
             "datetime": timestamp,
-            "description": entry.summary if 'summary' in entry else ""
+            "description": entry.summary if 'summary' in entry else "",
+            "sentiment": label,
+            "sentiment_score": compound
         })
         
     return news_items
