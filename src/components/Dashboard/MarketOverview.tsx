@@ -131,16 +131,14 @@ export function MarketOverview() {
                 {indices.length > 0 ? (
                     <div
                         style={{
-                            display: 'flex',
-                            gap: 'clamp(12px, 3vw, 20px)',
                             animation: scrollDirection === 'left'
                                 ? 'scroll-left 40s linear infinite'
                                 : 'scroll-right 40s linear infinite',
-                            paddingLeft: scrollDirection === 'left' ? '100%' : '0',
-                            paddingRight: scrollDirection === 'right' ? '100%' : '0',
+                            width: 'fit-content' // Ensure container wraps content properly
                         }}
                     >
-                        {scrollingIndices.map((index, idx) => {
+                        {/* Render double content for seamless loop */}
+                        {[...scrollingIndices, ...scrollingIndices].map((index, idx) => {
                             const isPositive = index.change >= 0;
                             const changeColor = isPositive ? '#22c55e' : '#ef4444';
 

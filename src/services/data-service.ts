@@ -126,7 +126,7 @@ export class DataService {
     private generateMockHistoryForSymbol(symbol: string): any[] {
         const history: any[] = [];
         const now = Date.now();
-        const days = 365 * 10; // 10 years of history
+        const days = 365 * 20; // 20 years of history (increased from 10)
         let price = 150.0; // Start somewhere plausible
 
         // Deterministic seed-ish based on symbol char codes

@@ -17,7 +17,7 @@ import './App.css';
 
 // Inner App Component to use Auth Hook
 function AppContent() {
-  const { user, login } = useAuth(); // Removed logout since we replaced it with profile
+  const { user, login } = useAuth();
   const location = useLocation();
   const { theme } = useThemeStore();
   const { profile } = useUserProfileStore();
@@ -162,9 +162,18 @@ function AppContent() {
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '12px',
+        overflowX: 'auto', // Allow horizontal scroll on mobile
+        scrollbarWidth: 'none', // Hide scrollbar Firefox
+        msOverflowStyle: 'none', // Hide scrollbar IE/Edge
       }}>
+        <style>{`
+          /* Hide scrollbar Chrome/Safari/Webkit */
+          div::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         {/* Left: Logo & Nav */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexShrink: 0 }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -195,7 +204,7 @@ function AppContent() {
           </div>
 
           {/* Navigation Links */}
-          <nav style={{ display: 'flex', gap: 'clamp(4px, 1vw, 8px)', flexWrap: 'wrap' }}>
+          <nav style={{ display: 'flex', gap: 'clamp(4px, 1vw, 8px)', overflowX: 'auto', whiteSpace: 'nowrap' }}>
             <Link
               to="/"
               style={{

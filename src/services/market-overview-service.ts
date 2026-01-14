@@ -1,10 +1,10 @@
 // Market indices to track
 import { BASE_URL } from './api-client';
 export const MARKET_INDICES = {
-    SPY: { name: 'S&P 500', symbol: 'SPY' },
-    QQQ: { name: 'NASDAQ', symbol: 'QQQ' },
-    DIA: { name: 'Dow Jones', symbol: 'DIA' },
-    IWM: { name: 'Russell 2000', symbol: 'IWM' },
+    '^GSPC': { name: 'S&P 500', symbol: '^GSPC' },
+    '^IXIC': { name: 'NASDAQ', symbol: '^IXIC' },
+    '^DJI': { name: 'Dow Jones', symbol: '^DJI' },
+    '^RUT': { name: 'Russell 2000', symbol: '^RUT' },
 } as const;
 
 export interface IndexData {
@@ -36,7 +36,9 @@ class MarketOverviewService {
         }
 
         try {
-            const url = `${BASE_URL}/api/yahoo/v8/finance/chart/${symbol}`;
+            // Encode symbol for URL (caret ^ needs encoding)
+            const encodedSymbol = encodeURIComponent(symbol);
+            const url = `${BASE_URL}/api/yahoo/v8/finance/chart/${encodedSymbol}`;
             const response = await fetch(url);
 
             if (!response.ok) {
@@ -82,14 +84,14 @@ class MarketOverviewService {
     // Fallback mock data when API fails
     private getMockIndexData(symbol: string): IndexData {
         const basePrices: Record<string, number> = {
-            'SPY': 480.50,
-            'QQQ': 415.30,
-            'DIA': 380.20,
-            'IWM': 210.15,
+            '^GSPC': 5500.50,
+            '^IXIC': 17500.30,
+            '^DJI': 42100.20,
+            '^RUT': 2150.15,
         };
 
-        const basePrice = basePrices[symbol] || 100;
-        const randomChange = (Math.random() - 0.5) * 2; // -1% to +1%
+        const basePrice = basePrices[symbol] || 1000;
+        const randomChange = (Math.random() - 0.5) * 1.5; // -0.75% to +0.75%
         const change = basePrice * (randomChange / 100);
 
         return {

@@ -89,51 +89,65 @@ export function WhatIfTab() {
 
         try {
             const dataService = new DataService();
+            // Fetch ample history to ensure we cover the requested dates
+            // 'max' range is best, or calculate years needed
             const history = await dataService.getHistoryData(symbol, '1d', 'max');
 
             if (!history || history.length === 0) {
                 throw new Error('No historical data found');
             }
 
-            // Find start candle
-            const startTime = new Date(date).getTime();
+            // Sort history by time just in case
             history.sort((a, b) => a.t - b.t);
+
+            const startTime = new Date(date).getTime();
+            const firstHistoryTime = history[0].t;
+            const lastHistoryTime = history[history.length - 1].t;
+
+            console.log(`Analyzing ${symbol}: Request ${date} (${startTime}), History Range: ${new Date(firstHistoryTime).toISOString()} - ${new Date(lastHistoryTime).toISOString()}`);
+
+            if (startTime < firstHistoryTime) {
+                throw new Error(`Entry date is before availble history for ${symbol} (Starts: ${new Date(firstHistoryTime).toLocaleDateString()})`);
+            }
+
+            // Find start candle: Exact or first candle POST selection?
+            // "If I bought ON this date": means price at close of that day.
+            // So we want the candle where candle.t covers that day.
+            // Assuming candle.t is 00:00 or close time.
+            // Let's find first candle where t >= startTime
             let startCandle = history.find(c => c.t >= startTime);
 
+            // If we selected a weekend, we want the next Monday.
             if (!startCandle) {
-                if (startTime < history[0].t) {
-                    throw new Error(`Entry date is before ${symbol} trading history`);
+                // If requested date is past the last candle
+                if (startTime > lastHistoryTime) {
+                    throw new Error('Entry date is in the future or no data available');
                 }
-                throw new Error('Could not find entry price for this date');
             }
 
             // Find end candle
             let currentCandle;
             if (endDate) {
                 const endTime = new Date(endDate).getTime();
-                // Find candle closest to end date but not after? Or simply first after? 
-                // Let's take the first candle that is >= endTime, similar to start time logic?
-                // Or maybe the last candle BEFORE endTime? 
-                // Usually "What if I sold on X date" means closing price of that date.
-                // So finding first candle with t >= endTime is likely next day open if date is midnight.
-                // Let's find the last candle <= endTime + 1 day?
+                if (endTime < startTime) {
+                    throw new Error('Exit date cannot be before entry date');
+                }
 
-                // Simpler approach: find candle strictly matching date, or assume close of that day.
-                // If we use find(c => c.t >= endTime), and endTime is '2023-01-01', we get the candle for that day (if exchange open).
-                // Let's stick to the same logic as start date for consistency.
+                // Find candle closest to end date
                 currentCandle = history.find(c => c.t >= endTime);
 
                 if (!currentCandle) {
-                    // If end date is in future or past last candle, take the very last candle
-                    if (endTime > history[history.length - 1].t) {
-                        currentCandle = history[history.length - 1];
-                    } else {
-                        throw new Error('Could not find exit price for this date');
+                    if (endTime > lastHistoryTime) {
+                        currentCandle = history[history.length - 1]; // Use latest available
                     }
                 }
             } else {
                 // Default to latest
                 currentCandle = history[history.length - 1];
+            }
+
+            if (!startCandle || !currentCandle) {
+                throw new Error('Could not determine entry/exit prices');
             }
 
             const initialPrice = startCandle.c;
