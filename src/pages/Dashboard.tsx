@@ -107,8 +107,8 @@ export function Dashboard() {
                 {/* Trending Stocks */}
                 <TrendingStocks />
 
-                {/* Recent Activity */}
-                <RecentActivity />
+
+                {/* Market News Feed */}
 
                 {/* Market News Feed */}
                 <NewsFeed />
@@ -217,6 +217,11 @@ export function Dashboard() {
                             </button>
                         ))}
                     </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div style={{ marginTop: '40px' }}>
+                    <RecentActivity />
                 </div>
             </div>
         </div>

@@ -4,6 +4,7 @@ import { activityService, type Activity } from '../../services/activity-service'
 
 export function RecentActivity() {
     const [activities, setActivities] = useState<Activity[]>([]);
+    const [isCollapsed, setIsCollapsed] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -86,129 +87,154 @@ export function RecentActivity() {
                     </span>
                 </h2>
 
-                <button
-                    onClick={handleClearAll}
-                    style={{
-                        padding: '6px 12px',
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        borderRadius: '6px',
-                        color: '#ef4444',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                    }}
-                >
-                    Clear All
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                        onClick={handleClearAll}
+                        style={{
+                            padding: '6px 12px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            borderRadius: '6px',
+                            color: '#ef4444',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                        }}
+                    >
+                        Clear All
+                    </button>
+                    <button
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        style={{
+                            padding: '6px 12px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                        }}
+                    >
+                        {isCollapsed ? 'Show' : 'Hide'}
+                    </button>
+                </div>
             </div>
 
             {/* Activity Timeline */}
-            <div style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '16px',
-                overflow: 'hidden',
-            }}>
-                {activities.map((activity, index) => {
-                    const isClickable = activity.symbol !== undefined;
-                    const icon = activityService.getActivityIcon(activity.type);
-                    const label = activityService.getActivityLabel(activity.type);
-                    const timeAgo = activityService.getFormattedTimestamp(activity.timestamp);
+            {!isCollapsed && (
+                <div style={{
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                }}>
+                    {activities.map((activity, index) => {
+                        const isClickable = activity.symbol !== undefined;
+                        const icon = activityService.getActivityIcon(activity.type);
+                        const label = activityService.getActivityLabel(activity.type);
+                        const timeAgo = activityService.getFormattedTimestamp(activity.timestamp);
 
-                    return (
-                        <div
-                            key={activity.id}
-                            onClick={() => isClickable && handleActivityClick(activity)}
-                            style={{
-                                padding: '16px 20px',
-                                borderBottom: index < activities.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
-                                cursor: isClickable ? 'pointer' : 'default',
-                                transition: 'background 0.15s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '16px',
-                            }}
-                            onMouseEnter={(e) => {
-                                if (isClickable) {
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'transparent';
-                            }}
-                        >
-                            {/* Icon */}
-                            <div style={{
-                                minWidth: '40px',
-                                height: '40px',
-                                background: 'rgba(59, 130, 246, 0.1)',
-                                border: '1px solid rgba(59, 130, 246, 0.2)',
-                                borderRadius: '10px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '20px',
-                            }}>
-                                {icon}
-                            </div>
-
-                            {/* Content */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{
-                                    fontSize: '14px',
-                                    color: '#fff',
-                                    marginBottom: '4px',
+                        return (
+                            <div
+                                key={activity.id}
+                                onClick={() => isClickable && handleActivityClick(activity)}
+                                style={{
+                                    padding: '16px 20px',
+                                    borderBottom: index < activities.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
+                                    cursor: isClickable ? 'pointer' : 'default',
+                                    transition: 'background 0.15s',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px',
-                                    flexWrap: 'wrap',
+                                    gap: '16px',
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (isClickable) {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                }}
+                            >
+                                {/* Icon */}
+                                <div style={{
+                                    minWidth: '40px',
+                                    height: '40px',
+                                    background: 'rgba(59, 130, 246, 0.1)',
+                                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                                    borderRadius: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '20px',
                                 }}>
-                                    <span>{label}</span>
-                                    {activity.symbol && (
-                                        <span style={{
-                                            fontWeight: 700,
-                                            fontFamily: 'monospace',
-                                            color: '#3b82f6',
-                                            background: 'rgba(59, 130, 246, 0.1)',
-                                            padding: '2px 8px',
-                                            borderRadius: '4px',
-                                        }}>
-                                            {activity.symbol}
-                                        </span>
-                                    )}
+                                    {icon}
                                 </div>
 
-                                <div style={{
-                                    fontSize: '12px',
-                                    color: '#666',
-                                }}>
-                                    {timeAgo}
+                                {/* Content */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{
+                                        fontSize: '14px',
+                                        color: '#fff',
+                                        marginBottom: '4px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        flexWrap: 'wrap',
+                                    }}>
+                                        <span>{label}</span>
+                                        {activity.symbol && (
+                                            <span style={{
+                                                fontWeight: 700,
+                                                fontFamily: 'monospace',
+                                                color: '#3b82f6',
+                                                background: 'rgba(59, 130, 246, 0.1)',
+                                                padding: '2px 8px',
+                                                borderRadius: '4px',
+                                            }}>
+                                                {activity.symbol}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div style={{
+                                        fontSize: '12px',
+                                        color: '#666',
+                                    }}>
+                                        {timeAgo}
+                                    </div>
                                 </div>
+
+                                {/* Arrow for clickable items */}
+                                {isClickable && (
+                                    <div style={{
+                                        color: '#666',
+                                        fontSize: '16px',
+                                    }}>
+                                        →
+                                    </div>
+                                )}
                             </div>
-
-                            {/* Arrow for clickable items */}
-                            {isClickable && (
-                                <div style={{
-                                    color: '#666',
-                                    fontSize: '16px',
-                                }}>
-                                    →
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* View All Link */}
-            {activities.length >= 8 && (
+            {!isCollapsed && activities.length >= 8 && (
                 <div style={{
                     textAlign: 'center',
                     marginTop: '12px',

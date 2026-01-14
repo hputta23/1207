@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import numpy as np
-from backend.data_service import fetch_stock_data, get_current_price, fetch_stock_news
+from backend.data_service import fetch_stock_data, get_current_price, fetch_stock_news, get_batch_quotes
 from backend.model import get_predictor
 import traceback
 import os
@@ -114,6 +114,21 @@ async def get_history(request: HistoryRequest):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/quotes")
+async def get_quotes(request: dict):
+    tickers = request.get("tickers", [])
+    if not tickers:
+        return []
+    return get_batch_quotes(tuple(tickers))
+
+@app.get("/quote/{ticker}")
+async def get_quote(ticker: str):
+    data = get_batch_quotes(tuple([ticker]))
+    if data:
+        return data[0]
+    raise HTTPException(status_code=404, detail="Quote not found")
 
 @app.get("/news/{ticker}")
 async def get_news(ticker: str):

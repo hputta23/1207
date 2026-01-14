@@ -27,9 +27,10 @@ def fetch_stock_data(ticker: str, period: str = "2y", api_source: str = "yahoo",
         DataFrame with Date and Close price.
     """
     try:
-        # Mock Data Logic
+
+        # Mock Data Logic - REMOVED
         if api_source == "mock":
-            return generate_mock_data(ticker, period)
+             raise ValueError("Mock data generation has been disabled.")
 
         # Alpha Vantage
         if api_source == "alpha_vantage":
@@ -75,28 +76,8 @@ def fetch_stock_data(ticker: str, period: str = "2y", api_source: str = "yahoo",
     except Exception as e:
         raise ValueError(f"Error fetching data for {ticker}: {str(e)}")
 
-def generate_mock_data(ticker, period):
-    import numpy as np
-    # Simple random walk for testing
-    days_map = {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825, "max": 3000}
-    days = days_map.get(period, 730)
-    
-    dates = pd.date_range(end=datetime.now(), periods=days)
-    base_price = 150.0
-    returns = np.random.normal(0, 0.02, days)
-    prices = base_price * np.exp(np.cumsum(returns))
-    
-    df = pd.DataFrame({
-        'Date': dates,
-        'Open': prices,
-        'High': prices * 1.01,
-        'Low': prices * 0.99,
-        'Close': prices,
-        'Volume': np.random.randint(1000000, 5000000, days)
-    })
-    
-    # Add Technical Indicators
-    return add_technical_indicators(df)
+
+# generate_mock_data removed
 
 def fetch_alpha_vantage_data(ticker: str, period: str, api_key: str):
     """Fetch data from Alpha Vantage API"""
@@ -232,7 +213,69 @@ def fetch_polygon_data(ticker: str, period: str, api_key: str):
     })
 
     df = df.sort_values('Date').reset_index(drop=True)
+    df = df.sort_values('Date').reset_index(drop=True)
     return add_technical_indicators(df)
+
+@cached(stock_cache)
+def get_batch_quotes(tickers: tuple):
+    """
+    Fetches current quotes for a list of tickers using yfinance fast_info or download.
+    Optimized for speed.
+    """
+    try:
+        data = yf.download(tickers, period="1d", group_by="ticker", threads=True, progress=False)
+        
+        quotes = []
+        
+        # If single ticker, data structure is different
+        if len(tickers) == 1:
+            ticker = tickers[0]
+            # yf.download(period="1d") returns a DF with valid data for the latest trading day
+            # If empty or all NaNs, then no data
+            if data.empty:
+                return []
+                
+            # Get last row
+            last_row = data.iloc[-1]
+            try:
+                # Calculate change (this is rough since download(1d) might not give prev close easily without more data)
+                # Better approach for current data: use Ticker.fast_info loop for accuracy, or download 2d for change.
+                # Let's use download(period='5d') to be safe and get change
+                pass
+            except:
+                pass
+                
+        # Better approach for real-time-ish quotes: Loop over fast_info (it's actually fast enough for <20 tickers)
+        # OR use download(period="2d") to calculate change
+        
+        # Let's try Ticker approach for better accuracy on "Change"
+        result = []
+        for ticker in tickers:
+            try:
+                t = yf.Ticker(ticker)
+                fast = t.fast_info
+                price = fast.last_price
+                prev_close = fast.previous_close
+                if price and prev_close:
+                    change = price - prev_close
+                    change_p = (change / prev_close) * 100
+                    
+                    result.append({
+                        "symbol": ticker,
+                        "price": price,
+                        "change": change,
+                        "changePercent": change_p,
+                        "volume": fast.last_volume,
+                        "marketCap": fast.market_cap
+                    })
+            except Exception as e:
+                print(f"Error fetching {ticker}: {e}")
+                
+        return result
+            
+    except Exception as e:
+        print(f"Batch fetch error: {e}")
+        return []
 
 def filter_by_period(df: pd.DataFrame, period: str):
     """Filter dataframe by period"""

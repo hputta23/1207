@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { watchlistService } from '../../services/watchlist-service';
 import { activityService } from '../../services/activity-service';
-import { BASE_URL } from '../../services/api-client';
+import { apiClient } from '../../services/api-client';
 
 interface StockQuote {
     symbol: string;
@@ -38,39 +38,25 @@ export function WatchlistQuickView() {
         }
 
         const fetchQuotes = async () => {
-            const newQuotes = new Map<string, StockQuote>();
+            try {
+                const data = await apiClient.getQuotes(watchlist);
+                const newQuotes = new Map<string, StockQuote>();
 
-            for (const symbol of watchlist) {
-                try {
-                    const url = `${BASE_URL}/api/yahoo/v8/finance/chart/${symbol}`;
-                    const response = await fetch(url);
-
-                    if (!response.ok) continue;
-
-                    const data = await response.json();
-                    const result = data?.chart?.result?.[0];
-
-                    if (!result) continue;
-
-                    const meta = result.meta;
-                    const currentPrice = meta.regularMarketPrice || meta.previousClose;
-                    const previousClose = meta.chartPreviousClose || meta.previousClose;
-                    const change = currentPrice - previousClose;
-                    const changePercent = (change / previousClose) * 100;
-
-                    newQuotes.set(symbol, {
-                        symbol,
-                        price: currentPrice,
-                        change,
-                        changePercent,
+                data.forEach((item: any) => {
+                    newQuotes.set(item.symbol, {
+                        symbol: item.symbol,
+                        price: item.price,
+                        change: item.change,
+                        changePercent: item.changePercent,
                     });
-                } catch (error) {
-                    console.error(`Error fetching ${symbol}:`, error);
-                }
-            }
+                });
 
-            setQuotes(newQuotes);
-            setLoading(false);
+                setQuotes(newQuotes);
+            } catch (error) {
+                console.error('Error fetching watchlist quotes:', error);
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchQuotes();

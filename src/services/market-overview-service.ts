@@ -1,4 +1,6 @@
 // Market indices to track
+// Market indices to track
+import { apiClient } from './api-client';
 import { BASE_URL } from './api-client';
 export const MARKET_INDICES = {
     '^GSPC': { name: 'S&P 500', symbol: '^GSPC' },
@@ -36,39 +38,21 @@ class MarketOverviewService {
         }
 
         try {
-            // Encode symbol for URL (caret ^ needs encoding)
-            const encodedSymbol = encodeURIComponent(symbol);
-            const url = `${BASE_URL}/api/yahoo/v8/finance/chart/${encodedSymbol}`;
-            const response = await fetch(url);
+            const data = await apiClient.getQuote(symbol);
 
-            if (!response.ok) {
-                console.warn(`Failed to fetch ${symbol}: ${response.status}`);
-                // Return mock data as fallback
-                return this.getMockIndexData(symbol);
-            }
-
-            const data = await response.json();
-            const result = data?.chart?.result?.[0];
-
-            if (!result) {
+            if (!data) {
                 console.warn(`No data for ${symbol}`);
-                return this.getMockIndexData(symbol);
+                return null;
             }
-
-            const meta = result.meta;
-            const currentPrice = meta.regularMarketPrice || meta.previousClose;
-            const previousClose = meta.chartPreviousClose || meta.previousClose;
-            const change = currentPrice - previousClose;
-            const changePercent = (change / previousClose) * 100;
 
             const indexData: IndexData = {
                 symbol,
                 name: MARKET_INDICES[symbol as keyof typeof MARKET_INDICES]?.name || symbol,
-                price: currentPrice,
-                change,
-                changePercent,
-                previousClose,
-                volume: meta.regularMarketVolume || 0,
+                price: data.price,
+                change: data.change,
+                changePercent: data.changePercent,
+                previousClose: data.price - data.change,
+                volume: data.volume,
                 lastUpdate: Date.now(),
             };
 
@@ -76,35 +60,12 @@ class MarketOverviewService {
             return indexData;
         } catch (error) {
             console.error(`Error fetching ${symbol}:`, error);
-            // Return mock data as fallback
-            return this.getMockIndexData(symbol);
+            return null;
         }
     }
 
-    // Fallback mock data when API fails
-    private getMockIndexData(symbol: string): IndexData {
-        const basePrices: Record<string, number> = {
-            '^GSPC': 5500.50,
-            '^IXIC': 17500.30,
-            '^DJI': 42100.20,
-            '^RUT': 2150.15,
-        };
 
-        const basePrice = basePrices[symbol] || 1000;
-        const randomChange = (Math.random() - 0.5) * 1.5; // -0.75% to +0.75%
-        const change = basePrice * (randomChange / 100);
-
-        return {
-            symbol,
-            name: MARKET_INDICES[symbol as keyof typeof MARKET_INDICES]?.name || symbol,
-            price: basePrice + change,
-            change: change,
-            changePercent: randomChange,
-            previousClose: basePrice,
-            volume: Math.floor(Math.random() * 100000000),
-            lastUpdate: Date.now(),
-        };
-    }
+    // Mock data removed
 
     async fetchAllIndices(): Promise<IndexData[]> {
         const symbols = Object.keys(MARKET_INDICES);

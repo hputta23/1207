@@ -16,7 +16,16 @@ export function AutoRefreshControl() {
     const currentLabel = intervals.find(i => i.value === interval)?.label || '1 minute';
 
     return (
-        <div style={{ position: 'relative' }}>
+        <div className="autorefresh-control" style={{ position: 'relative' }}>
+            <style>
+                {`
+                    @media (max-width: 768px) {
+                        .autorefresh-control {
+                            display: none !important;
+                        }
+                    }
+                `}
+            </style>
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 style={{

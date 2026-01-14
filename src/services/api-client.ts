@@ -26,6 +26,22 @@ export interface BacktestRequest {
 }
 
 export const apiClient = {
+    async getQuotes(tickers: string[]) {
+        const response = await fetch(`${BASE_URL}/quotes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tickers }),
+        });
+        if (!response.ok) throw new Error('Failed to fetch quotes');
+        return response.json();
+    },
+
+    async getQuote(ticker: string) {
+        const response = await fetch(`${BASE_URL}/quote/${ticker}`);
+        if (!response.ok) throw new Error('Failed to fetch quote');
+        return response.json();
+    },
+
     async predict(data: PredictionRequest) {
         const response = await fetch(`${BASE_URL}/predict`, {
             method: 'POST',
