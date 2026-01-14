@@ -54,7 +54,7 @@ export const PortfolioChart: React.FC = () => {
                     <Tooltip
                         contentStyle={{ background: '#0f172a', border: '1px solid #333', borderRadius: '4px' }}
                         labelFormatter={(label) => new Date(label).toLocaleTimeString()}
-                        formatter={(value: number) => [`$${value.toFixed(2)}`, 'Value']}
+                        formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Value']}
                     />
                     <Area
                         type="monotone"
