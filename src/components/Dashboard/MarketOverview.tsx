@@ -5,7 +5,7 @@ import { EconomicCalendar } from './EconomicCalendar';
 export function MarketOverview() {
     const [indices, setIndices] = useState<IndexData[]>([]);
     const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
-    const [scrollDirection, setScrollDirection] = useState<'left' | 'right'>('right');
+    // Removed isPaused and scrollDirection state
 
     useEffect(() => {
         const fetchData = async () => {
@@ -62,34 +62,7 @@ export function MarketOverview() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {/* Direction Toggle Button */}
-                    <button
-                        onClick={() => setScrollDirection(prev => prev === 'left' ? 'right' : 'left')}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 12px',
-                            background: 'rgba(59, 130, 246, 0.15)',
-                            border: '1px solid rgba(59, 130, 246, 0.3)',
-                            borderRadius: '6px',
-                            color: '#3b82f6',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.25)';
-                            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
-                            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                        }}
-                    >
-                        {scrollDirection === 'left' ? '← Scroll' : 'Scroll →'}
-                    </button>
+                    {/* Removed Button */}
 
                     {marketStatus && (
                         <div style={{
@@ -131,9 +104,10 @@ export function MarketOverview() {
                 {indices.length > 0 ? (
                     <div
                         style={{
-                            animation: scrollDirection === 'left'
-                                ? 'scroll-left 40s linear infinite'
-                                : 'scroll-right 40s linear infinite',
+                            display: 'flex',
+                            gap: 'clamp(12px, 3vw, 20px)',
+                            // Hardcoded to scroll-right (Left to Right)
+                            animation: 'scroll-right 40s linear infinite',
                             width: 'fit-content' // Ensure container wraps content properly
                         }}
                     >
