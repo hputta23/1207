@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChartContainer } from './ChartContainer';
+import { ChartControls, type Timeframe } from './ChartControls';
 import { DataService, type DataServiceConfig } from '../../services/data-service';
 import { useDataSourceStore } from '../../services/data-source-config';
 import { useDimensions } from '../../hooks/useDimensions';
@@ -11,10 +12,25 @@ interface StockChartProps {
     symbol: string;
 }
 
+interface IndicatorState {
+    sma: boolean;
+    ema: boolean;
+    volume: boolean;
+}
+
 export function StockChart({ symbol }: StockChartProps) {
     const { ref: chartRef, dimensions } = useDimensions<HTMLDivElement>();
     const { selectedSource, sources } = useDataSourceStore();
     const { theme: themeMode } = useThemeStore();
+
+    // Chart State
+    const [interval, setInterval] = useState<Timeframe>('5m'); // Default 5m as requested
+    const [indicators, setIndicators] = useState<IndicatorState>({
+        sma: false,
+        ema: false,
+        volume: true
+    });
+
     const theme = useMemo(() => {
         const colors = getThemeColors(themeMode);
         return {
@@ -50,26 +66,47 @@ export function StockChart({ symbol }: StockChartProps) {
         };
     }, []);
 
-    // Update data service config when data source or symbol changes
+    // Update data when Config, Symbol, OR Interval changes
     useEffect(() => {
         if (dataServiceRef.current) {
             dataServiceRef.current.updateConfig(dataSourceConfig);
-            dataServiceRef.current.fetchHistory(symbol, '1d', '3mo'); // Default 3mo history
+            // Fetch with selected interval
+            dataServiceRef.current.fetchHistory(symbol, interval);
         }
-    }, [dataSourceConfig, symbol]);
+    }, [dataSourceConfig, symbol, interval]);
+
+    // Handle Indicator Toggles (Mock data for now until calculation service exists)
+    const indicatorData = useMemo(() => {
+        const data: any = { indicatorList: [] };
+        // We would calculate SMA/EMA here based on 'candles'
+        return data;
+    }, [candles, indicators]);
 
     return (
-        <div ref={chartRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
-            {dimensions.width > 0 && dimensions.height > 0 && (
-                <ChartContainer
-                    id={`chart-${symbol}`}
-                    width={dimensions.width}
-                    height={dimensions.height}
-                    theme={theme}
-                    data={candles}
-                    syncManager={syncManager}
-                />
-            )}
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+            {/* Toolbar */}
+            <ChartControls
+                symbol={symbol}
+                interval={interval}
+                indicators={indicators}
+                onIntervalChange={setInterval}
+                onIndicatorToggle={(key) => setIndicators(prev => ({ ...prev, [key]: !prev[key] }))}
+            />
+
+            {/* Chart Area */}
+            <div ref={chartRef} style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+                {dimensions.width > 0 && dimensions.height > 0 && (
+                    <ChartContainer
+                        id={`chart-${symbol}`}
+                        width={dimensions.width}
+                        height={dimensions.height}
+                        theme={theme}
+                        data={candles}
+                        syncManager={syncManager}
+                        indicatorData={indicatorData}
+                    />
+                )}
+            </div>
         </div>
     );
 }

@@ -283,7 +283,7 @@ function AppContent() {
                 transition: 'all 0.15s ease',
               }}
             >
-              Trade
+              Paper Trade
             </Link>
             <Link
               to="/analytics"
@@ -383,8 +383,7 @@ function AppContent() {
         </Routes>
       </div>
 
-      {/* Theme Toggle */}
-      <ThemeToggle />
+      {/* Theme Toggle Removed - Moved to Profile Preferences */}
     </div>
   );
 }

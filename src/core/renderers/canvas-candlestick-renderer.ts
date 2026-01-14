@@ -18,6 +18,7 @@ export class CanvasCandlestickRenderer {
         bounds: RenderBounds
     ): void {
         if (candles.length === 0) return;
+        if (!viewport || !viewport.width || !viewport.height) return; // Guard clause
 
         const { width, height } = viewport;
         const { minPrice, maxPrice } = bounds;

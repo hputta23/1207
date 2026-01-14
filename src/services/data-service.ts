@@ -39,6 +39,20 @@ export class DataService {
         }
     }
 
+    private getRangeForInterval(interval: string): string {
+        switch (interval) {
+            case '1m': return '1d';
+            case '5m': return '5d'; // 5 days of 5m data is good context
+            case '15m': return '5d';
+            case '30m': return '1mo';
+            case '1h': return '1mo';
+            case '1d': return '1y';
+            case '1wk': return '5y';
+            case '1mo': return 'max';
+            default: return '1mo';
+        }
+    }
+
     public updateConfig(config: DataServiceConfig) {
         this.config = config;
     }
@@ -47,13 +61,19 @@ export class DataService {
      * Fetch historical data from selected data source
      * Falls back to mock data if API fails
      */
-    public async fetchHistory(symbol: string, interval = '1d', range = '1mo'): Promise<void> {
+    public async fetchHistory(symbol: string, interval = '5m', range?: string): Promise<void> {
         const now = Date.now();
 
         // Prevent too frequent refetches (rate limiting)
-        if (now - this.lastFetchTime < 5000) {
-            console.log('Skipping fetch - too soon after last fetch');
-            return;
+        // Reduced to 2s to feel snappier when switching timeframes
+        if (now - this.lastFetchTime < 2000) {
+            // console.log('Skipping fetch - too soon after last fetch');
+            // return;
+        }
+
+        // Auto-select range if not provided
+        if (!range) {
+            range = this.getRangeForInterval(interval);
         }
 
         try {
@@ -62,11 +82,11 @@ export class DataService {
 
             // Use Yahoo Finance via Vite proxy for direct API access
             if (this.config.dataSource === 'yahoo') {
-                history = await this.fetchFromYahoo(symbol, interval, range);
+                history = await this.fetchFromYahoo(symbol, interval, range!);
             }
             // Use backend for other data sources
             else {
-                history = await this.fetchFromBackend(symbol, range);
+                history = await this.fetchFromBackend(symbol, range!);
             }
 
             if (history.length === 0) {

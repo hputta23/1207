@@ -7,6 +7,8 @@ import { ChartOverlay } from '../Overlay/ChartOverlay';
 import type { RenderState, Theme } from '../../core/renderer/types';
 import { TimeSyncManager } from '../../core/synchronization/time-sync-manager';
 
+import { CanvasCandlestickRenderer } from '../../core/renderers/canvas-candlestick-renderer';
+
 interface IndicatorDataItem {
     id: string;
     name: string;
@@ -40,28 +42,46 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
     indicatorData
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const rendererRef = useRef<DeterministicRenderer | null>(null);
+    const rendererRef = useRef<DeterministicRenderer | CanvasCandlestickRenderer | null>(null);
     const transformManagerRef = useRef<TransformManager | null>(null);
     const inputHandlerRef = useRef<InputHandler | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // UI State for Overlay
+    // UI State
     const [crosshair, setCrosshair] = useState<CrosshairState | null>(null);
     const [renderError, setRenderError] = useState<string | null>(null);
+    const [isFallback, setIsFallback] = useState(false);
 
     // Initialize Engine
     useEffect(() => {
         if (!canvasRef.current) return;
 
-        // 1. Renderer (might fail if WebGL not supported)
+        // 1. Renderer Initialization (WebGL -> 2D Fallback)
         try {
             rendererRef.current = new DeterministicRenderer(canvasRef.current);
-            setRenderError(null); // Clear any previous errors
+            setRenderError(null);
+            setIsFallback(false);
+            console.log(`[Chart ${id}] WebGL renderer initialized successfully.`);
         } catch (e) {
-            const errorMsg = e instanceof Error ? e.message : 'Unknown WebGL error';
-            console.error(`Chart ${id} - Renderer failed to initialize:`, e);
-            setRenderError(errorMsg);
-            return; // Don't proceed with interaction setup if renderer failed
+            console.warn(`[Chart ${id}] WebGL renderer failed, attempting 2D fallback:`, e);
+
+            // Fallback to 2D Renderer
+            try {
+                const ctx = canvasRef.current.getContext('2d');
+                if (ctx) {
+                    rendererRef.current = new CanvasCandlestickRenderer(ctx);
+                    setIsFallback(true);
+                    setRenderError(null); // Clear error since we have a fallback
+                    console.log(`[Chart ${id}] 2D renderer initialized as fallback.`);
+                } else {
+                    throw new Error('Could not get 2D context');
+                }
+            } catch (fallbackError) {
+                const errorMsg = fallbackError instanceof Error ? fallbackError.message : 'Unknown Renderer error';
+                console.error(`[Chart ${id}] Both WebGL and 2D renderers failed:`, fallbackError);
+                setRenderError(errorMsg);
+                return; // Stop initialization
+            }
         }
 
         let unsubscribeLocal: (() => void) | undefined;
@@ -101,7 +121,6 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
 
             // 4. Subscribe to Local Transform Changes
             unsubscribeLocal = transformManagerRef.current.subscribe((state) => {
-                // Broadcast to Sync Manager if exists
                 if (syncManager) {
                     syncManager.update({
                         centerX: state.x,
@@ -115,17 +134,11 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
             if (syncManager) {
                 unsubscribeSync = syncManager.subscribe((syncState, sourceId) => {
                     if (sourceId === id) return; // Ignore own updates
-
-                    // Apply sync state to local transform
-                    // NOTE: We assume 'centerX' maps directly to 'x' for now.
                     if (transformManagerRef.current) {
                         transformManagerRef.current.setState({
                             x: syncState.centerX,
                             scale: syncState.scale
                         });
-                        // Render is triggered by the local subscribe above,
-                        // or we can force it here if setState doesn't emit when value is same?
-                        // Our TransformManager emits on setState.
                     }
                 });
             }
@@ -141,26 +154,19 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
             if (unsubscribeSync) unsubscribeSync();
             inputHandlerRef.current?.detach();
         };
-    }, [syncManager]); // Re-init if syncManager changes (unlikely)
+    }, [syncManager]); // Re-init if syncManager changes
 
-    // Handle Resizing, Props Updates, & DATA
+    // Handle Resizing & Data
     useEffect(() => {
-        // Update crosshair data calculation if data changes while hovering?
-        // Ideally we refetch the crosshair state, but onMove handles it for now.
-        // We do need to update the binding if 'data' prop reference changes in the generic closure?
-        // Actually, the onMove closure 'data' is stale if not updated.
-        // Simpler fix: Use a ref for data or re-bind inputHandler.onMove.
-        // For this demo, let's just re-bind.
-
-        if (inputHandlerRef.current) {
+        // Re-bind input handler if needed (simplified for this update)
+        if (inputHandlerRef.current && transformManagerRef.current) {
             inputHandlerRef.current.onMove = (mouseX, mouseY) => {
-                if (!transformManagerRef.current) return;
                 const viewport = {
-                    x: transformManagerRef.current.getState().x,
-                    y: transformManagerRef.current.getState().y,
+                    x: transformManagerRef.current!.getState().x,
+                    y: transformManagerRef.current!.getState().y,
                     width,
                     height,
-                    scale: transformManagerRef.current.getState().scale
+                    scale: transformManagerRef.current!.getState().scale
                 };
                 const state = CrosshairManager.calculate(mouseX, mouseY, viewport, data, width, height);
                 setCrosshair(state);
@@ -168,9 +174,11 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
         }
 
         if (canvasRef.current && rendererRef.current) {
+            // Resize canvas (important for 2D context to prevent blur/stretch)
+            // But DeterministicRenderer (WebGL) typically handles viewport in render()
+            // CanvasCandlestickRenderer relies on canvas dimensions.
             canvasRef.current.width = width;
             canvasRef.current.height = height;
-            // Trigger render when data changes
             renderFrame();
         }
     }, [width, height, theme, data]);
@@ -181,28 +189,58 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
         try {
             const currentTransform = transformManagerRef.current.getState();
 
-            const state: RenderState = {
-                viewport: {
-                    x: currentTransform.x,
-                    y: currentTransform.y,
-                    width: width,
-                    height: height,
-                    scale: currentTransform.scale
-                },
-                data: {
-                    candles: data, // Use data from props
-                    indicators: indicatorData, // Legacy format
-                    indicatorList: indicatorData?.indicatorList, // New dynamic format
-                    minPrice: 0, // Auto-calculated by renderer
-                    maxPrice: 2000,
-                    minTime: 0,
-                    maxTime: 50
-                },
-                theme: theme,
-                timestamp: Date.now()
+            // Construct state (shared interface might need adjustment if Renderers diverge)
+            // DeterministicRenderer expects RenderState.
+            // CanvasCandlestickRenderer expects (candles, viewport, bounds).
+            // We need to branch logic based on isFallback.
+
+            const viewport = {
+                x: currentTransform.x,
+                y: currentTransform.y,
+                width: width,
+                height: height,
+                scale: currentTransform.scale
             };
 
-            rendererRef.current.render(state);
+            if (isFallback) {
+                // 2D Rendering
+                const renderer = rendererRef.current as CanvasCandlestickRenderer;
+                const _renderer = rendererRef.current as any; // Type assertion helper
+
+                // Manually clear for 2D
+                if (_renderer.ctx) {
+                    const ctx = _renderer.ctx as CanvasRenderingContext2D;
+                    ctx.fillStyle = theme.background;
+                    ctx.fillRect(0, 0, width, height);
+                }
+
+                // Calculate View-adjusted subset of candles? 
+                // The 2D renderer 'render' method takes ALL candles and does its own mapping?
+                // Let's check CanvasCandlestickRenderer signature: render(candles, viewport, bounds)
+
+                const bounds = (renderer as any).calculateBounds ? (renderer as any).calculateBounds(data) : { minPrice: 0, maxPrice: 100 };
+
+                renderer.render(data, viewport, bounds);
+
+            } else {
+                // WebGL Rendering
+                const state: RenderState = {
+                    viewport,
+                    data: {
+                        candles: data,
+                        indicators: indicatorData,
+                        indicatorList: indicatorData?.indicatorList,
+                        minPrice: 0,
+                        maxPrice: 2000,
+                        minTime: 0,
+                        maxTime: 50
+                    },
+                    theme: theme,
+                    timestamp: Date.now()
+                };
+                (rendererRef.current as DeterministicRenderer).render(state);
+            }
+
         } catch (e) {
             console.error('Render frame failed:', e);
         }
@@ -222,39 +260,31 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
             onMouseLeave={() => setCrosshair(null)}
         >
             {renderError ? (
-                /* WebGL Error Fallback UI */
+                /* Error Fallback UI */
                 <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    padding: '40px',
-                    textAlign: 'center',
-                    color: '#888',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    height: '100%', padding: '40px', textAlign: 'center', color: '#888',
                 }}>
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginBottom: '16px', opacity: 0.5 }}>
                         <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 600, color: '#aaa' }}>
-                        WebGL Not Available
+                        Chart Unavailable
                     </h3>
-                    <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5, maxWidth: '400px' }}>
-                        {renderError}
-                    </p>
-                    <p style={{ margin: '16px 0 0 0', fontSize: '12px', color: '#666' }}>
-                        Try updating your browser or enabling hardware acceleration
-                    </p>
+                    <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5, maxWidth: '400px' }}>{renderError}</p>
                 </div>
             ) : (
-                /* Normal Chart Rendering */
                 <>
-                    <canvas
-                        ref={canvasRef}
-                        style={{ display: 'block' }}
-                    />
-                    {/* Overlay Layer */}
+                    <canvas ref={canvasRef} style={{ display: 'block' }} />
                     <ChartOverlay width={width} height={height} crosshair={crosshair} />
+                    {isFallback && (
+                        <div style={{
+                            position: 'absolute', bottom: '8px', right: '8px',
+                            fontSize: '10px', color: '#666', pointerEvents: 'none'
+                        }}>
+                            2D Rendering Mode
+                        </div>
+                    )}
                 </>
             )}
         </div>

@@ -24,11 +24,19 @@ export interface Holding {
     averageCost: number;
 }
 
+export interface PortfolioSnapshot {
+    timestamp: number;
+    value: number;
+}
+
 interface TradingState {
     holdings: Record<string, Holding>;
     transactions: Transaction[];
+    portfolioHistory: PortfolioSnapshot[];
+    realizedPnL: number;
     executeOrder: (symbol: string, side: OrderSide, quantity: number, currentPrice: number) => { success: boolean; message: string };
     getHolding: (symbol: string) => Holding | undefined;
+    trackPortfolioValue: (currentPrices: Record<string, number>) => void;
     resetTrading: () => void;
 }
 
@@ -37,6 +45,8 @@ export const useTradingStore = create<TradingState>()(
         (set, get) => ({
             holdings: {},
             transactions: [],
+            portfolioHistory: [],
+            realizedPnL: 0,
 
             executeOrder: (symbol, side, quantity, currentPrice) => {
                 const { holdings, transactions } = get();
@@ -112,7 +122,7 @@ export const useTradingStore = create<TradingState>()(
                     const newHoldings = { ...holdings };
 
                     if (remainingQty > 0) {
-                        // Avg Cost remains same on partial sell (FIFO standard approach usually, but avg cost simple here)
+                        // Avg Cost remains same on partial sell
                         newHoldings[upperSymbol] = {
                             ...currentHolding,
                             quantity: remainingQty,
@@ -121,7 +131,11 @@ export const useTradingStore = create<TradingState>()(
                         delete newHoldings[upperSymbol];
                     }
 
-                    // 3. Log Transaction
+                    // 3. Calculate Realized P&L
+                    const costBasis = quantity * currentHolding.averageCost;
+                    const realizedPnL = totalCost - costBasis; // Proceeds - Cost
+
+                    // 4. Log Transaction
                     const transaction: Transaction = {
                         id: uuidv4(),
                         symbol: upperSymbol,
@@ -134,13 +148,44 @@ export const useTradingStore = create<TradingState>()(
                         status: 'FILLED',
                     };
 
+                    // 5. Update Realized P&L History (Simplified: just cumulative for now, or transaction based)
+                    // We'll trust transaction history for P&L calc, but store a cumulative total for easier access
+                    const currentRealized = get().realizedPnL || 0;
+
                     set({
                         holdings: newHoldings,
                         transactions: [transaction, ...transactions],
+                        realizedPnL: currentRealized + realizedPnL
                     });
 
-                    return { success: true, message: `Sold ${quantity} ${upperSymbol} @ $${currentPrice.toFixed(2)}` };
+                    return { success: true, message: `Sold ${quantity} ${upperSymbol} (P&L: $${realizedPnL.toFixed(2)})` };
                 }
+            },
+
+            // New Method: Snapshot Portfolio Value
+            // Call this periodically or on major actions
+            trackPortfolioValue: (currentPrices: Record<string, number>) => {
+                const { holdings, portfolioHistory } = get();
+                const userStore = useUserProfileStore.getState();
+
+                let holdingsValue = 0;
+                Object.values(holdings).forEach(h => {
+                    const price = currentPrices[h.symbol] || h.averageCost;
+                    holdingsValue += h.quantity * price;
+                });
+
+                const totalValue = userStore.profile.balance + holdingsValue;
+                const timestamp = Date.now();
+
+                // DONT add duplicate if close in time (e.g. < 1 min)
+                const lastEntry = portfolioHistory[portfolioHistory.length - 1];
+                if (lastEntry && (timestamp - lastEntry.timestamp < 60000)) {
+                    return;
+                }
+
+                set({
+                    portfolioHistory: [...portfolioHistory, { timestamp, value: totalValue }]
+                });
             },
 
             getHolding: (symbol) => get().holdings[symbol.toUpperCase()],

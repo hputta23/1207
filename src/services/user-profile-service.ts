@@ -9,6 +9,16 @@ export interface UserProfile {
     joinedAt: number;
     balance: number;
     theme: 'dark' | 'light';
+    email?: string;
+    phone?: string;
+    bio?: string;
+    settings: {
+        notifications: boolean;
+        soundEnabled: boolean;
+        language: string;
+        defaultTimeframe?: string;
+        twoFactorEnabled?: boolean;
+    };
 }
 
 interface UserProfileState {
@@ -30,6 +40,11 @@ const generateDefaultProfile = (): UserProfile => {
         joinedAt: Date.now(),
         balance: DEFAULT_BALANCE,
         theme: 'dark',
+        settings: {
+            notifications: true,
+            soundEnabled: true,
+            language: 'en',
+        },
     };
 };
 
