@@ -4,6 +4,19 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom', 'zustand'],
+          'vendor-charts': ['recharts', 'plotly.js-dist-min', 'technicalindicators'],
+          'vendor-utils': ['date-fns', 'uuid', 'clsx', 'immer'],
+          'vendor-gl': ['gl-matrix']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000 // Increase limit slightly to reduce noise for vendor chunks
+  },
   server: {
     proxy: {
       '/api/yahoo': {

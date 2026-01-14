@@ -1,20 +1,29 @@
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './state/auth-context';
-import { Dashboard } from './pages/Dashboard';
-import { ChartsPage } from './pages/ChartsPage';
-import { NewsTab } from './pages/NewsTab';
-import { WatchlistTab } from './pages/WatchlistTab';
-import { TradingPage } from './pages/TradingPage';
-import { AnalyticsTab } from './pages/AnalyticsTab';
-import { WhatIfTab } from './pages/WhatIfTab';
 import { ThemeToggle } from './components/Theme/ThemeToggle';
 import { useThemeStore, getThemeColors } from './services/theme-service';
 import { AlertsBadge } from './components/Alerts/AlertsBadge';
 import { ProfileModal } from './components/Profile/ProfileModal';
 import { useUserProfileStore } from './services/user-profile-service';
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { BottomNav } from './components/Navigation/BottomNav';
 import './App.css';
+
+// Lazy Load Pages for Performance
+const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
+const ChartsPage = lazy(() => import('./pages/ChartsPage').then(module => ({ default: module.ChartsPage })));
+const NewsTab = lazy(() => import('./pages/NewsTab').then(module => ({ default: module.NewsTab })));
+const WatchlistTab = lazy(() => import('./pages/WatchlistTab').then(module => ({ default: module.WatchlistTab })));
+const TradingPage = lazy(() => import('./pages/TradingPage').then(module => ({ default: module.TradingPage })));
+const AnalyticsTab = lazy(() => import('./pages/AnalyticsTab').then(module => ({ default: module.AnalyticsTab })));
+const WhatIfTab = lazy(() => import('./pages/WhatIfTab').then(module => ({ default: module.WhatIfTab })));
+
+// Loading Component
+const LoadingScreen = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%', minHeight: '50vh' }}>
+    <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(59,130,246,0.3)', borderTopColor: '#3b82f6', borderRadius: '50%' }}></div>
+  </div>
+);
 
 // Inner App Component to use Auth Hook
 function AppContent() {
@@ -381,15 +390,17 @@ function AppContent() {
 
       {/* Main Content Area */}
       <div style={{ flex: 1 }}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/charts" element={<ChartsPage />} />
-          <Route path="/news" element={<NewsTab />} />
-          <Route path="/watchlist" element={<WatchlistTab />} />
-          <Route path="/trading" element={<TradingPage />} />
-          <Route path="/analytics" element={<AnalyticsTab />} />
-          <Route path="/what-if" element={<WhatIfTab />} />
-        </Routes>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/charts" element={<ChartsPage />} />
+            <Route path="/news" element={<NewsTab />} />
+            <Route path="/watchlist" element={<WatchlistTab />} />
+            <Route path="/trading" element={<TradingPage />} />
+            <Route path="/analytics" element={<AnalyticsTab />} />
+            <Route path="/what-if" element={<WhatIfTab />} />
+          </Routes>
+        </Suspense>
       </div>
 
       {/* Theme Toggle Removed - Moved to Profile Preferences */}
