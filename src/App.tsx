@@ -25,9 +25,13 @@ const LoadingScreen = () => (
   </div>
 );
 
+import { LoginPage } from './pages/LoginPage';
+
+// ... (previous imports)
+
 // Inner App Component to use Auth Hook
 function AppContent() {
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const { theme } = useThemeStore();
   const { profile } = useUserProfileStore();
@@ -35,131 +39,11 @@ function AppContent() {
   const colors = getThemeColors(theme);
 
   if (!user) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)',
-        color: '#fff',
-      }}>
-        {/* Logo */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '40px',
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '24px',
-            fontWeight: 700,
-          }}>
-            T
-          </div>
-          <div>
-            <h1 style={{
-              margin: 0,
-              fontSize: '28px',
-              fontWeight: 700,
-              letterSpacing: '-0.5px',
-            }}>
-              Terminal Pro
-            </h1>
-            <p style={{
-              margin: 0,
-              fontSize: '13px',
-              color: '#666',
-              fontWeight: 400,
-            }}>
-              Enterprise Trading Platform
-            </p>
-          </div>
-        </div>
-
-        {/* Login Card */}
-        <div style={{
-          background: '#141414',
-          border: '1px solid #2a2a2a',
-          borderRadius: '16px',
-          padding: 'clamp(24px, 5vw, 40px)',
-          width: 'clamp(280px, 90vw, 360px)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-        }}>
-          <h2 style={{
-            margin: '0 0 8px 0',
-            fontSize: '20px',
-            fontWeight: 600,
-          }}>
-            Welcome back
-          </h2>
-          <p style={{
-            margin: '0 0 24px 0',
-            fontSize: '14px',
-            color: '#666',
-          }}>
-            Sign in to access your trading workspace
-          </p>
-
-          <button
-            onClick={() => login('trader_1')}
-            style={{
-              width: '100%',
-              padding: '14px 20px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#fff',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-            }}
-          >
-            Sign in as Trader
-          </button>
-
-          <p style={{
-            margin: '16px 0 0 0',
-            fontSize: '12px',
-            color: '#555',
-            textAlign: 'center',
-          }}>
-            Demo mode - No credentials required
-          </p>
-        </div>
-
-        {/* Footer */}
-        <p style={{
-          position: 'absolute',
-          bottom: '20px',
-          fontSize: '11px',
-          color: '#444',
-        }}>
-          Project 1207 - Enterprise Financial Charting Platform
-        </p>
-      </div>
-    );
+    return <LoginPage />;
   }
 
   return (
+    // ... authenticated app structure
     <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', flexDirection: 'column', background: colors.background, transition: 'background 0.3s ease' }}>
 
       {/* Mobile Nav Hiding CSS */}

@@ -1,24 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useUserProfileStore } from '../../services/user-profile-service';
-import { useThemeStore } from '../../services/theme-service'; // Import theme store
+import { useAuth } from '../../state/auth-context';
+import { useThemeStore } from '../../services/theme-service';
 
 interface ProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-type Section = 'general' | 'security' | 'api' | 'preferences' | 'danger';
+type Section = 'general' | 'subscription' | 'security' | 'api' | 'preferences' | 'danger';
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     const { profile, updateProfile, resetProfile } = useUserProfileStore();
+    const { user, logout } = useAuth();
     const [activeSection, setActiveSection] = useState<Section>('general');
     const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-    // Form State - initialized from profile when modal opens
+    // Form State
     const [formData, setFormData] = useState({
         nickname: '',
-        email: '',
-        phone: '',
         bio: '',
         settings: { ...profile.settings }
     });
@@ -27,8 +27,6 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         if (isOpen) {
             setFormData({
                 nickname: profile.nickname,
-                email: profile.email || '',
-                phone: profile.phone || '',
                 bio: profile.bio || '',
                 settings: { ...profile.settings }
             });
@@ -45,8 +43,6 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     const handleSave = () => {
         updateProfile({
             nickname: formData.nickname,
-            email: formData.email,
-            phone: formData.phone,
             bio: formData.bio,
             settings: formData.settings
         });
@@ -64,8 +60,9 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     };
 
     const handleReset = () => {
-        if (confirm('Are you sure you want to reset your profile? This cannot be undone.')) {
+        if (confirm('Are you sure you want to delete your account? This cannot be undone.')) {
             resetProfile();
+            logout();
             onClose();
         }
     };
@@ -79,7 +76,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 background: activeSection === id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
                 border: 'none',
                 borderLeft: activeSection === id ? '3px solid #3b82f6' : '3px solid transparent',
-                color: activeSection === id ? '#fff' : '#888',
+                color: activeSection === id ? '#fff' : '#94a3b8',
                 textAlign: 'left',
                 cursor: 'pointer',
                 fontSize: '14px',
@@ -90,7 +87,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 transition: 'all 0.2s',
             }}
         >
-            <span style={{ fontSize: '16px' }}>{icon}</span>
+            <span style={{ fontSize: '18px' }}>{icon}</span>
             {label}
         </button>
     );
@@ -101,40 +98,68 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                 {/* Sidebar */}
                 <div style={sidebarStyle}>
-                    <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ padding: '32px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                             <div style={avatarContainerStyle}>
                                 <img src={profile.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
                             <div style={{ overflow: 'hidden' }}>
-                                <div style={{ color: '#fff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <div style={{ color: '#fff', fontWeight: 600, fontSize: '16px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {profile.nickname}
                                 </div>
-                                <div style={{ color: '#888', fontSize: '11px' }}>Trader Account</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                                    <span style={{
+                                        fontSize: '10px',
+                                        fontWeight: 700,
+                                        background: user?.subscription === 'pro' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#334155',
+                                        color: '#fff',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        {user?.subscription || 'FREE'}
+                                    </span>
+                                    <span style={{ color: '#64748b', fontSize: '12px' }}>Member</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ padding: '16px 0' }}>
+                    <div style={{ padding: '16px 0', flex: 1 }}>
                         <SidebarItem id="general" label="General" icon="👤" />
+                        <SidebarItem id="subscription" label="Subscription" icon="💳" />
                         <SidebarItem id="security" label="Security" icon="🔒" />
                         <SidebarItem id="api" label="API Keys" icon="🔑" />
                         <SidebarItem id="preferences" label="Preferences" icon="⚙️" />
-                        <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '8px 0' }} />
+                    </div>
+
+                    <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                         <SidebarItem id="danger" label="Danger Zone" icon="⚠️" />
+                        <div style={{ marginTop: '8px' }}>
+                            <button onClick={logout} style={{ ...sidebarItemStyle, color: '#ef4444' }}>
+                                <span style={{ fontSize: '18px' }}>🚪</span>
+                                Sign Out
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 {/* Main Content */}
                 <div style={contentStyle}>
                     <div style={headerStyle}>
-                        <h2 style={{ margin: 0, fontSize: '20px', color: '#fff' }}>
-                            {activeSection === 'general' && 'General Settings'}
-                            {activeSection === 'security' && 'Security & Login'}
-                            {activeSection === 'api' && 'API Management'}
-                            {activeSection === 'preferences' && 'App Preferences'}
-                            {activeSection === 'danger' && 'Danger Zone'}
-                        </h2>
+                        <div>
+                            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#fff' }}>
+                                {activeSection === 'general' && 'General Settings'}
+                                {activeSection === 'subscription' && 'Subscription & Billing'}
+                                {activeSection === 'security' && 'Security & Login'}
+                                {activeSection === 'api' && 'API Management'}
+                                {activeSection === 'preferences' && 'App Preferences'}
+                                {activeSection === 'danger' && 'Danger Zone'}
+                            </h2>
+                            <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '14px' }}>
+                                Manage your account settings and preferences
+                            </p>
+                        </div>
                         <button onClick={onClose} style={closeButtonStyle}>✕</button>
                     </div>
 
@@ -152,18 +177,11 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                 <div style={formGroupStyle}>
                                     <label style={labelStyle}>Email Address</label>
                                     <input
-                                        style={inputStyle}
-                                        value={formData.email}
-                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                        style={{ ...inputStyle, opacity: 0.7, cursor: 'not-allowed' }}
+                                        value={user?.email || ''}
+                                        readOnly
                                     />
-                                </div>
-                                <div style={formGroupStyle}>
-                                    <label style={labelStyle}>Phone Number</label>
-                                    <input
-                                        style={inputStyle}
-                                        value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                    />
+                                    <span style={{ fontSize: '12px', color: '#64748b' }}>Email cannot be changed</span>
                                 </div>
                                 <div style={formGroupStyle}>
                                     <label style={labelStyle}>Bio</label>
@@ -171,9 +189,49 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                         style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
                                         value={formData.bio}
                                         onChange={e => setFormData({ ...formData, bio: e.target.value })}
+                                        placeholder="Tell us a bit about yourself..."
                                     />
                                 </div>
                                 <SaveButton onClick={handleSave} />
+                            </div>
+                        )}
+
+                        {activeSection === 'subscription' && (
+                            <div style={formStackStyle}>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)',
+                                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                                    borderRadius: '12px',
+                                    padding: '24px'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                                        <div>
+                                            <div style={{ color: '#3b82f6', fontWeight: 700, letterSpacing: '1px', fontSize: '12px', marginBottom: '8px' }}>CURRENT PLAN</div>
+                                            <div style={{ fontSize: '32px', fontWeight: 800, color: '#fff' }}>Pro Trader</div>
+                                            <div style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px' }}>$49.00 / month</div>
+                                        </div>
+                                        <div style={{
+                                            background: '#3b82f6', color: '#fff', padding: '6px 12px',
+                                            borderRadius: '20px', fontSize: '12px', fontWeight: 700
+                                        }}>
+                                            ACTIVE
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                                        <FeatureItem label="Real-time Data" active />
+                                        <FeatureItem label="Advanced Charts" active />
+                                        <FeatureItem label="Unlimited Backtesting" active />
+                                        <FeatureItem label="API Access" active />
+                                        <FeatureItem label="Level 2 Quotes" active />
+                                        <FeatureItem label="Priority Support" active />
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <button style={{ ...secondaryButtonStyle, flex: 1 }}>Manage Billing</button>
+                                        <button style={{ ...secondaryButtonStyle, flex: 1, borderColor: 'transparent', color: '#ef4444' }}>Cancel Subscription</button>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -183,7 +241,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div>
                                             <div style={{ color: '#fff', fontWeight: 500 }}>Two-Factor Authentication</div>
-                                            <div style={{ color: '#888', fontSize: '13px', marginTop: '4px' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '13px', marginTop: '4px' }}>
                                                 Secure your account with 2FA
                                             </div>
                                         </div>
@@ -197,7 +255,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div>
                                             <div style={{ color: '#fff', fontWeight: 500 }}>Login History</div>
-                                            <div style={{ color: '#888', fontSize: '13px', marginTop: '4px' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '13px', marginTop: '4px' }}>
                                                 View your recent login activity
                                             </div>
                                         </div>
@@ -210,39 +268,18 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                         {activeSection === 'api' && (
                             <div style={formStackStyle}>
-                                <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-                                    <code style={{ display: 'block', color: '#3b82f6', marginBottom: '8px', fontSize: '12px' }}>PUBLIC KEY</code>
-                                    <div style={{ fontFamily: 'monospace', color: '#fff', wordBreak: 'break-all' }}>
+                                <div style={{ background: '#0f172a', border: '1px solid #1e293b', padding: '20px', borderRadius: '8px', marginBottom: '16px' }}>
+                                    <code style={{ display: 'block', color: '#64748b', marginBottom: '8px', fontSize: '12px', fontWeight: 600 }}>PUBLIC KEY</code>
+                                    <div style={{ fontFamily: 'monospace', color: '#fff', wordBreak: 'break-all', fontSize: '14px', background: '#1e293b', padding: '12px', borderRadius: '6px' }}>
                                         pk_live_892374892374892374...
                                     </div>
                                 </div>
-                                <button style={primaryButtonStyle}>+ Create New API Key</button>
-                                <div style={{ marginTop: '24px' }}>
-                                    <div style={{ color: '#888', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Active Keys</div>
-                                    <div style={cardStyle}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div style={{ color: '#fff', fontFamily: 'monospace' }}>Read-Only Key</div>
-                                            <div style={{ color: '#22c55e', fontSize: '12px' }}>Active</div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <button style={primaryButtonStyle}>+ Create New Secret Key</button>
                             </div>
                         )}
 
                         {activeSection === 'preferences' && (
                             <div style={formStackStyle}>
-                                <div style={formGroupStyle}>
-                                    <label style={labelStyle}>Interface Language</label>
-                                    <select
-                                        style={inputStyle}
-                                        value={formData.settings.language}
-                                        onChange={e => handleSettingChange('language', e.target.value)}
-                                    >
-                                        <option value="en">English (US)</option>
-                                        <option value="es">Español</option>
-                                        <option value="fr">Français</option>
-                                    </select>
-                                </div>
                                 <div style={formGroupStyle}>
                                     <label style={labelStyle}>Theme Mode</label>
                                     <select
@@ -251,10 +288,6 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                         onChange={e => {
                                             const newTheme = e.target.value as 'dark' | 'light';
                                             useThemeStore.getState().setTheme(newTheme);
-                                            // Sync with profile setting if we want to persist it there too, 
-                                            // but for now userProfile logic doesn't strictly drive the app theme directly in App.tsx 
-                                            // (App.tsx uses useThemeStore). WE should probably sync them.
-                                            // Ideally, updateProfile should also update the local store theme.
                                         }}
                                     >
                                         <option value="dark">Dark Mode</option>
@@ -265,23 +298,11 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                     <div style={itemRowStyle}>
                                         <div>
                                             <div style={{ color: '#fff' }}>Notifications</div>
-                                            <div style={{ color: '#888', fontSize: '12px' }}>Enable push notifications</div>
+                                            <div style={{ color: '#94a3b8', fontSize: '12px' }}>Enable push notifications</div>
                                         </div>
                                         <Toggle
                                             checked={formData.settings.notifications}
                                             onChange={e => handleSettingChange('notifications', e.target.checked)}
-                                        />
-                                    </div>
-                                </div>
-                                <div style={cardStyle}>
-                                    <div style={itemRowStyle}>
-                                        <div>
-                                            <div style={{ color: '#fff' }}>Sound Effects</div>
-                                            <div style={{ color: '#888', fontSize: '12px' }}>Play trade confirmation sounds</div>
-                                        </div>
-                                        <Toggle
-                                            checked={formData.settings.soundEnabled}
-                                            onChange={e => handleSettingChange('soundEnabled', e.target.checked)}
                                         />
                                     </div>
                                 </div>
@@ -290,13 +311,13 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         )}
 
                         {activeSection === 'danger' && (
-                            <div style={{ border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', padding: '24px' }}>
-                                <h3 style={{ color: '#ef4444', margin: '0 0 12px' }}>Delete Account</h3>
-                                <p style={{ color: '#888', fontSize: '14px', lineHeight: '1.5', margin: '0 0 24px' }}>
+                            <div style={{ border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', padding: '24px' }}>
+                                <h3 style={{ color: '#ef4444', margin: '0 0 12px', fontSize: '16px' }}>Delete Account</h3>
+                                <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.5', margin: '0 0 24px' }}>
                                     Once you delete your account, there is no going back. Please be certain.
                                 </p>
                                 <button onClick={handleReset} style={{ ...secondaryButtonStyle, color: '#ef4444', borderColor: '#ef4444' }}>
-                                    Reset Profile & Balance
+                                    Delete Account
                                 </button>
                             </div>
                         )}
@@ -314,6 +335,13 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     );
 }
 
+const FeatureItem = ({ label, active }: { label: string, active: boolean }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ color: active ? '#3b82f6' : '#64748b' }}>{active ? '✓' : '•'}</div>
+        <div style={{ color: active ? '#e2e8f0' : '#64748b', fontSize: '13px' }}>{label}</div>
+    </div>
+);
+
 // STYLES & COMPONENTS
 
 const overlayStyle: React.CSSProperties = {
@@ -328,20 +356,20 @@ const overlayStyle: React.CSSProperties = {
 
 const modalStyle: React.CSSProperties = {
     display: 'flex',
-    width: '800px',
-    height: '600px',
-    background: '#0f1115', // Darker background for "Pro" feel
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '12px',
-    boxShadow: '0 24px 48px rgba(0,0,0,0.6)',
+    width: '900px',
+    height: '650px',
+    background: '#0a0a0a',
+    border: '1px solid #1e293b',
+    borderRadius: '16px',
+    boxShadow: '0 24px 48px rgba(0,0,0,0.5)',
     overflow: 'hidden',
     position: 'relative',
 };
 
 const sidebarStyle: React.CSSProperties = {
-    width: '240px',
-    background: '#13161c',
-    borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+    width: '260px',
+    background: '#0a0a0a',
+    borderRight: '1px solid #1e293b',
     display: 'flex',
     flexDirection: 'column',
 };
@@ -350,15 +378,15 @@ const contentStyle: React.CSSProperties = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    background: '#0f1115',
+    background: '#0a0a0a',
 };
 
 const headerStyle: React.CSSProperties = {
-    padding: '24px 32px',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+    padding: '32px',
+    borderBottom: '1px solid #1e293b',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
 };
 
 const scrollAreaStyle: React.CSSProperties = {
@@ -371,7 +399,7 @@ const formStackStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     gap: '24px',
-    maxWidth: '480px',
+    maxWidth: '520px',
 };
 
 const formGroupStyle: React.CSSProperties = {
@@ -381,16 +409,16 @@ const formGroupStyle: React.CSSProperties = {
 };
 
 const labelStyle: React.CSSProperties = {
-    color: '#888',
+    color: '#94a3b8',
     fontSize: '13px',
-    fontWeight: 500,
+    fontWeight: 600,
 };
 
 const inputStyle: React.CSSProperties = {
-    background: 'rgba(0,0,0,0.2)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '6px',
-    padding: '10px 12px',
+    background: '#1e293b',
+    border: '1px solid #334155',
+    borderRadius: '8px',
+    padding: '12px 16px',
     color: '#fff',
     fontSize: '14px',
     outline: 'none',
@@ -399,14 +427,14 @@ const inputStyle: React.CSSProperties = {
 
 const cardStyle: React.CSSProperties = {
     background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.05)',
+    border: '1px solid #1e293b',
     borderRadius: '8px',
-    padding: '16px',
+    padding: '20px',
 };
 
 const avatarContainerStyle: React.CSSProperties = {
-    width: '40px',
-    height: '40px',
+    width: '48px',
+    height: '48px',
     borderRadius: '50%',
     overflow: 'hidden',
     border: '2px solid rgba(255,255,255,0.1)',
@@ -421,18 +449,19 @@ const itemRowStyle: React.CSSProperties = {
 const closeButtonStyle: React.CSSProperties = {
     background: 'transparent',
     border: 'none',
-    color: '#888',
-    fontSize: '20px',
+    color: '#64748b',
+    fontSize: '24px',
     cursor: 'pointer',
     padding: '4px',
+    lineHeight: 1,
 };
 
 const primaryButtonStyle: React.CSSProperties = {
     background: '#3b82f6',
     color: '#fff',
     border: 'none',
-    borderRadius: '6px',
-    padding: '10px 16px',
+    borderRadius: '8px',
+    padding: '12px 20px',
     fontSize: '14px',
     fontWeight: 600,
     cursor: 'pointer',
@@ -442,12 +471,27 @@ const primaryButtonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
     background: 'transparent',
     color: '#fff',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '6px',
-    padding: '8px 12px',
+    border: '1px solid #334155',
+    borderRadius: '8px',
+    padding: '10px 16px',
     fontSize: '13px',
     fontWeight: 500,
     cursor: 'pointer',
+};
+
+const sidebarItemStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 16px',
+    background: 'transparent',
+    border: 'none',
+    textAlign: 'left',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 500,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    transition: 'all 0.2s',
 };
 
 const toastStyle: React.CSSProperties = {
@@ -457,7 +501,7 @@ const toastStyle: React.CSSProperties = {
     background: '#10b981',
     color: '#fff',
     padding: '12px 24px',
-    borderRadius: '6px',
+    borderRadius: '8px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
     fontSize: '14px',
     fontWeight: 600,
@@ -472,17 +516,17 @@ const SaveButton = ({ onClick }: { onClick: () => void }) => (
 );
 
 const Toggle = ({ checked, onChange }: { checked: boolean, onChange: (e: any) => void }) => (
-    <label style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px' }}>
+    <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px' }}>
         <input type="checkbox" checked={checked} onChange={onChange} style={{ opacity: 0, width: 0, height: 0 }} />
         <span style={{
             position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: checked ? '#3b82f6' : 'rgba(255,255,255,0.2)',
-            transition: '.3s', borderRadius: '20px',
+            backgroundColor: checked ? '#3b82f6' : '#334155',
+            transition: '.3s', borderRadius: '22px',
         }} />
         <span style={{
-            position: 'absolute', content: '""', height: '14px', width: '14px', left: '3px', bottom: '3px',
+            position: 'absolute', content: '""', height: '16px', width: '16px', left: '3px', bottom: '3px',
             backgroundColor: 'white', transition: '.3s', borderRadius: '50%',
-            transform: checked ? 'translateX(16px)' : 'translateX(0)'
+            transform: checked ? 'translateX(18px)' : 'translateX(0)'
         }} />
     </label>
 );
