@@ -13,6 +13,7 @@ import { AlertsBadge } from './components/Alerts/AlertsBadge';
 import { ProfileModal } from './components/Profile/ProfileModal';
 import { useUserProfileStore } from './services/user-profile-service';
 import { useState } from 'react';
+import { BottomNav } from './components/Navigation/BottomNav';
 import './App.css';
 
 // Inner App Component to use Auth Hook
@@ -151,6 +152,14 @@ function AppContent() {
 
   return (
     <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', flexDirection: 'column', background: colors.background, transition: 'background 0.3s ease' }}>
+
+      {/* Mobile Nav Hiding CSS */}
+      <style>{`
+          @media (max-width: 768px) {
+              .desktop-nav-links { display: none !important; }
+          }
+      `}</style>
+
       {/* Top Navigation Bar */}
       <div style={{
         minHeight: '50px',
@@ -162,9 +171,9 @@ function AppContent() {
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '12px',
-        overflowX: 'auto', // Allow horizontal scroll on mobile
-        scrollbarWidth: 'none', // Hide scrollbar Firefox
-        msOverflowStyle: 'none', // Hide scrollbar IE/Edge
+        overflowX: 'auto',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
       }}>
         <style>{`
           /* Hide scrollbar Chrome/Safari/Webkit */
@@ -204,7 +213,7 @@ function AppContent() {
           </div>
 
           {/* Navigation Links */}
-          <nav style={{ display: 'flex', gap: 'clamp(4px, 1vw, 8px)', overflowX: 'auto', whiteSpace: 'nowrap' }}>
+          <nav className="desktop-nav-links" style={{ display: 'flex', gap: 'clamp(4px, 1vw, 8px)', overflowX: 'auto', whiteSpace: 'nowrap' }}>
             <Link
               to="/"
               style={{
@@ -384,6 +393,7 @@ function AppContent() {
       </div>
 
       {/* Theme Toggle Removed - Moved to Profile Preferences */}
+      <BottomNav />
     </div>
   );
 }

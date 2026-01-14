@@ -74,88 +74,121 @@ export function TradingPage() {
         return () => clearInterval(interval);
     }, [symbol, holdings]); // Re-run if symbol or holdings change
 
+    // Mobile Tab State
+    const [activeMobileTab, setActiveMobileTab] = useState<'chart' | 'trade' | 'portfolio' | 'market'>('chart');
+
+    // Mobile Tab Styles
+    const mobileTabStyle = (isActive: boolean) => ({
+        flex: 1,
+        padding: '12px',
+        textAlign: 'center' as const,
+        fontSize: '13px',
+        fontWeight: isActive ? 600 : 500,
+        color: isActive ? '#3b82f6' : '#888',
+        borderBottom: isActive ? '2px solid #3b82f6' : '2px solid transparent',
+        cursor: 'pointer',
+        background: 'transparent',
+    });
+
     return (
         <div className="page-container">
             {/* Header - Fixed */}
             <div style={{
-                padding: '20px 24px',
+                padding: '16px',
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                justifyContent: 'space-between',
                 background: '#0f172a',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
                 flexWrap: 'wrap',
-                gap: '16px'
+                gap: '12px'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                    <h1 style={{ margin: 0, fontSize: 'clamp(18px, 4vw, 20px)', color: '#fff' }}>Paper Trading Dashboard</h1>
-                    <div style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)',
-                        padding: '4px 8px', borderRadius: '4px'
-                    }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }}></div>
-                        <span style={{ fontSize: '11px', color: '#22c55e', fontWeight: 600, whiteSpace: 'nowrap' }}>LIVE (DELAYED)</span>
-                    </div>
-                </div>
-                <div style={{ flexGrow: 1, maxWidth: '400px', display: 'flex', gap: '16px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                     <TickerSearch
                         currentSymbol={symbol}
                         onSymbolChange={handleSymbolChange}
                     />
+                    <div className="desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '11px', color: '#22c55e', fontWeight: 600 }}>● LIVE</span>
+                    </div>
+                </div>
+                <div className="desktop-only">
                     <DataSourceSelector />
                 </div>
             </div>
 
-            {/* Main Content - Responsive Grid */}
+            {/* Mobile Tab Navigation (Visible only on Mobile) */}
+            <div className="mobile-tabs" style={{ display: 'none', background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div onClick={() => setActiveMobileTab('chart')} style={mobileTabStyle(activeMobileTab === 'chart')}>Chart</div>
+                <div onClick={() => setActiveMobileTab('trade')} style={mobileTabStyle(activeMobileTab === 'trade')}>Trade</div>
+                <div onClick={() => setActiveMobileTab('portfolio')} style={mobileTabStyle(activeMobileTab === 'portfolio')}>Positions</div>
+                <div onClick={() => setActiveMobileTab('market')} style={mobileTabStyle(activeMobileTab === 'market')}>Market</div>
+            </div>
+            <style>{`
+                @media (max-width: 1023px) {
+                    .mobile-tabs { display: flex !important; }
+                    .desktop-only { display: none !important; }
+                    .trading-grid { display: none !important; } /* Hide Grid, Show Mobile Views */
+                    .mobile-view { display: block !important; padding: 16px; height: calc(100vh - 120px); overflow-y: auto; }
+                }
+                @media (min-width: 1024px) {
+                    .mobile-view { display: none !important; }
+                }
+            `}</style>
+
+            {/* Desktop Grid Layout (Hidden on Mobile) */}
             <div className="trading-grid">
                 {/* 1. Left Column: Charts & Portfolio */}
                 <div className="chart-section">
-                    {/* Main Stock Chart */}
-                    <div style={{
-                        height: 'clamp(300px, 50vh, 500px)',
-                        minHeight: '300px',
-                        background: '#1a1a2e',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        border: '1px solid rgba(255,255,255,0.1)'
-                    }}>
+                    <div style={{ height: '500px', background: '#1a1a2e', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
                         <StockChart symbol={symbol} />
                     </div>
-
-                    {/* Portfolio Components */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                        gap: '24px'
-                    }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 2fr) 1fr', gap: '24px' }}>
                         <PortfolioChart />
-                        <div>
-                            <h3 style={{ margin: '0 0 16px', fontSize: '14px', color: '#888', fontWeight: 600 }}>METRICS</h3>
-                            <PnLMetrics quotes={quotes} />
-                        </div>
+                        <PnLMetrics quotes={quotes} />
                     </div>
-
-                    {/* Portfolio Table */}
                     <div style={{ overflowX: 'auto' }}>
-                        <h3 style={{ color: '#fff', marginBottom: '16px' }}>Your Portfolio</h3>
+                        <h3 style={{ color: '#fff', marginBottom: '16px' }}>Portfolio</h3>
                         <PortfolioTable quotes={quotes} />
                     </div>
                 </div>
 
-                {/* 2. Right Column: Order Entry & Watchlist */}
+                {/* 2. Right Column: Sidebar */}
                 <div className="sidebar-section">
-                    <OrderEntry
-                        symbol={symbol}
-                        currentPrice={quotes[symbol]?.price || 0}
-                        onOrderPlaced={() => { }}
-                    />
-
-                    {/* Market Sidebar - Set exact height or flex to ensure visibility */}
+                    <OrderEntry symbol={symbol} currentPrice={quotes[symbol]?.price || 0} onOrderPlaced={() => { }} />
                     <div style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
                         <MarketSidebar onSelectSymbol={handleSymbolChange} />
                     </div>
                 </div>
+            </div>
+
+            {/* Mobile View Container (Visible only on Mobile) */}
+            <div className="mobile-view">
+                {activeMobileTab === 'chart' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ height: '400px', background: '#1a1a2e', borderRadius: '12px', overflow: 'hidden' }}>
+                            <StockChart symbol={symbol} />
+                        </div>
+                        <PnLMetrics quotes={quotes} />
+                    </div>
+                )}
+
+                {activeMobileTab === 'trade' && (
+                    <OrderEntry symbol={symbol} currentPrice={quotes[symbol]?.price || 0} onOrderPlaced={() => setActiveMobileTab('portfolio')} />
+                )}
+
+                {activeMobileTab === 'portfolio' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <PortfolioChart />
+                        <PortfolioTable quotes={quotes} />
+                    </div>
+                )}
+
+                {activeMobileTab === 'market' && (
+                    <div style={{ height: '100%' }}>
+                        <MarketSidebar onSelectSymbol={(s) => { handleSymbolChange(s); setActiveMobileTab('chart'); }} />
+                    </div>
+                )}
             </div>
         </div>
     );
