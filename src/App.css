@@ -172,3 +172,78 @@ input {
 .bg-bearish {
   background-color: rgba(239, 68, 68, 0.1) !important;
 }
+
+/* =========================================
+   RESPONSIVE LAYOUT UTILITIES
+   ========================================= */
+
+/* Mobile First: Default to stacked layout */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.trading-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px;
+}
+
+.chart-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sidebar-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Desktop: Use Grid Layout for larger screens */
+@media (min-width: 1024px) {
+  .page-container {
+    height: calc(100vh - 50px);
+    overflow: hidden;
+    /* Fix body scroll on desktop */
+  }
+
+  .trading-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) 350px;
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    /* Divider */
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .chart-section {
+    padding: 24px;
+    overflow-y: auto;
+    background: #0f172a;
+  }
+
+  .sidebar-section {
+    padding: 24px;
+    overflow-y: auto;
+    background: #0f172a;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* Hide scrollbars on mobile for cleaner look */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+}

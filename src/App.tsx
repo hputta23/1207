@@ -150,7 +150,7 @@ function AppContent() {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: colors.background, transition: 'background 0.3s ease' }}>
+    <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', flexDirection: 'column', background: colors.background, transition: 'background 0.3s ease' }}>
       {/* Top Navigation Bar */}
       <div style={{
         minHeight: '50px',

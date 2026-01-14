@@ -75,12 +75,7 @@ export function TradingPage() {
     }, [symbol, holdings]); // Re-run if symbol or holdings change
 
     return (
-        <div style={{
-            height: 'calc(100vh - 50px)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-        }}>
+        <div className="page-container">
             {/* Header - Fixed */}
             <div style={{
                 padding: '20px 24px',
@@ -88,48 +83,38 @@ export function TradingPage() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
-                background: '#0f172a'
+                background: '#0f172a',
+                flexWrap: 'wrap',
+                gap: '16px'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <h1 style={{ margin: 0, fontSize: '20px', color: '#fff' }}>Paper Trading Dashboard</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <h1 style={{ margin: 0, fontSize: 'clamp(18px, 4vw, 20px)', color: '#fff' }}>Paper Trading Dashboard</h1>
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
                         background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)',
                         padding: '4px 8px', borderRadius: '4px'
                     }}>
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }}></div>
-                        <span style={{ fontSize: '11px', color: '#22c55e', fontWeight: 600 }}>LIVE DATA (DELAYED)</span>
+                        <span style={{ fontSize: '11px', color: '#22c55e', fontWeight: 600, whiteSpace: 'nowrap' }}>LIVE (DELAYED)</span>
                     </div>
+                </div>
+                <div style={{ flexGrow: 1, maxWidth: '400px', display: 'flex', gap: '16px', justifyContent: 'flex-end', alignItems: 'center' }}>
                     <TickerSearch
                         currentSymbol={symbol}
                         onSymbolChange={handleSymbolChange}
                     />
+                    <DataSourceSelector />
                 </div>
-                <DataSourceSelector />
             </div>
 
-            {/* Main Content - Split Columns with independent scroll if needed */}
-            <div style={{
-                flex: 1,
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 3fr) 320px',
-                gap: '1px',
-                background: 'rgba(255,255,255,0.05)', // Divider color
-                overflow: 'hidden'
-            }}>
+            {/* Main Content - Responsive Grid */}
+            <div className="trading-grid">
                 {/* 1. Left Column: Charts & Portfolio */}
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '24px',
-                    overflowY: 'auto',
-                    padding: '24px',
-                    background: '#0f172a'
-                }}>
+                <div className="chart-section">
                     {/* Main Stock Chart */}
                     <div style={{
-                        height: '500px',
-                        minHeight: '500px',
+                        height: 'clamp(300px, 50vh, 500px)',
+                        minHeight: '300px',
                         background: '#1a1a2e',
                         borderRadius: '12px',
                         overflow: 'hidden',
@@ -139,7 +124,11 @@ export function TradingPage() {
                     </div>
 
                     {/* Portfolio Components */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                        gap: '24px'
+                    }}>
                         <PortfolioChart />
                         <div>
                             <h3 style={{ margin: '0 0 16px', fontSize: '14px', color: '#888', fontWeight: 600 }}>METRICS</h3>
@@ -148,22 +137,14 @@ export function TradingPage() {
                     </div>
 
                     {/* Portfolio Table */}
-                    <div>
+                    <div style={{ overflowX: 'auto' }}>
                         <h3 style={{ color: '#fff', marginBottom: '16px' }}>Your Portfolio</h3>
                         <PortfolioTable quotes={quotes} />
                     </div>
                 </div>
 
                 {/* 2. Right Column: Order Entry & Watchlist */}
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '24px',
-                    overflowY: 'auto',
-                    padding: '24px',
-                    background: '#0f172a',
-                    borderLeft: '1px solid rgba(255,255,255,0.05)'
-                }}>
+                <div className="sidebar-section">
                     <OrderEntry
                         symbol={symbol}
                         currentPrice={quotes[symbol]?.price || 0}
