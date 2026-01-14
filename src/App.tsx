@@ -6,6 +6,7 @@ import { NewsTab } from './pages/NewsTab';
 import { WatchlistTab } from './pages/WatchlistTab';
 import { TradingPage } from './pages/TradingPage';
 import { AnalyticsTab } from './pages/AnalyticsTab';
+import { WhatIfTab } from './pages/WhatIfTab';
 import { ThemeToggle } from './components/Theme/ThemeToggle';
 import { useThemeStore, getThemeColors } from './services/theme-service';
 import { AlertsBadge } from './components/Alerts/AlertsBadge';
@@ -291,6 +292,22 @@ function AppContent() {
             >
               Analytics
             </Link>
+            <Link
+              to="/what-if"
+              style={{
+                padding: '8px 16px',
+                background: location.pathname === '/what-if' ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                border: location.pathname === '/what-if' ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent',
+                borderRadius: '6px',
+                color: location.pathname === '/what-if' ? '#3b82f6' : '#888',
+                fontSize: '14px',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              What If?
+            </Link>
           </nav>
         </div>
 
@@ -353,6 +370,7 @@ function AppContent() {
           <Route path="/watchlist" element={<WatchlistTab />} />
           <Route path="/trading" element={<TradingPage />} />
           <Route path="/analytics" element={<AnalyticsTab />} />
+          <Route path="/what-if" element={<WhatIfTab />} />
         </Routes>
       </div>
 

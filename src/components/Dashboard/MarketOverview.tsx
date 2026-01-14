@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { marketOverviewService, type IndexData, type MarketStatus } from '../../services/market-overview-service';
+import { EconomicCalendar } from './EconomicCalendar';
 
 export function MarketOverview() {
     const [indices, setIndices] = useState<IndexData[]>([]);
@@ -216,6 +217,9 @@ export function MarketOverview() {
                     </div>
                 )}
             </div>
+
+            {/* Economic Calendar */}
+            <EconomicCalendar />
 
             {/* CSS Animation */}
             <style>{`

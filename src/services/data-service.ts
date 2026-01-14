@@ -107,6 +107,63 @@ export class DataService {
             }
         }
     }
+    /**
+     * Get raw historical data without affecting internal state (Chart)
+     */
+    public async getHistoryData(symbol: string, interval = '1d', range = 'max'): Promise<any[]> {
+        try {
+            if (this.config.dataSource === 'yahoo') {
+                return await this.fetchFromYahoo(symbol, interval, range);
+            } else {
+                return await this.fetchFromBackend(symbol, range);
+            }
+        } catch (error) {
+            console.warn(`[DataService] Fetch failed for ${symbol}, falling back to mock data.`, error);
+            return this.generateMockHistoryForSymbol(symbol);
+        }
+    }
+
+    private generateMockHistoryForSymbol(symbol: string): any[] {
+        const history: any[] = [];
+        const now = Date.now();
+        const days = 365 * 10; // 10 years of history
+        let price = 150.0; // Start somewhere plausible
+
+        // Deterministic seed-ish based on symbol char codes
+        let seed = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const random = () => {
+            const x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        };
+
+        for (let i = days; i >= 0; i--) {
+            const time = now - (i * 24 * 60 * 60 * 1000);
+
+            // Add some trend and volatility
+            const trend = (i > days / 2) ? 0.05 : -0.02; // Change trend halfway
+            const volatility = price * 0.02;
+            const change = (random() - 0.48) * volatility; // slight upward bias
+
+            const open = price;
+            const close = price + change;
+            const high = Math.max(open, close) + (random() * volatility * 0.5);
+            const low = Math.min(open, close) - (random() * volatility * 0.5);
+
+            history.push({
+                t: time,
+                o: open,
+                h: high,
+                l: low,
+                c: close,
+                v: Math.floor(1000000 + random() * 500000)
+            });
+
+            price = close;
+            if (price < 10) price = 10; // Prevent negative prices
+        }
+
+        return history;
+    }
 
     private async fetchFromYahoo(symbol: string, interval: string, range: string): Promise<any[]> {
         // Use backend proxy to avoid CORS
